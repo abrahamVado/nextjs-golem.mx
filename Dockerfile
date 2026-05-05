@@ -8,7 +8,8 @@ RUN apt-get update \
 
 COPY package*.json ./
 
-RUN npm install --no-audit --no-fund
+RUN npm config set registry http://registry.npmjs.org/ \
+    && npm ci --no-audit --no-fund
 
 COPY . .
 

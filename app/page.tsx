@@ -3,7 +3,7 @@ export default function Home() {
     <main style={{ padding: 40, fontFamily: 'system-ui' }}>
       <h1>nextjs-golem.mx</h1>
       <p>Frontend is running.</p>
-      <a href="/api/health">Check API health through Nginx</a>
+      <a href="/api/v1/health">Check API health through Nginx</a>
     </main>
   );
 }
