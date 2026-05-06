@@ -1,0 +1,361 @@
+/* Board + Columns */
+.kanban-board {
+
+    .kanban-col::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .kanban-col::-webkit-scrollbar-thumb {
+        background-color: rgba(203, 213, 225, 0.5);
+        border-radius: 3px;
+    }
+
+    .dark .kanban-col::-webkit-scrollbar-thumb {
+        background-color: rgba(71, 85, 105, 0.5);
+    }
+
+    .column-header {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        background: rgba(255, 255, 255, 0.8) !important;
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+    }
+
+    /* Cards */
+    .task-card {
+        cursor: grab;
+        position: relative;
+        overflow: hidden;
+        user-select: none;
+        transition: transform 0.12s ease, box-shadow 0.12s ease, outline-color 0.12s ease;
+        will-change: transform, box-shadow;
+    }
+
+    .task-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 18px 36px -22px rgba(15, 23, 42, 0.35);
+        outline: 2px solid rgba(16, 185, 129, 0.18);
+        outline-offset: 2px;
+    }
+
+    .task-card.dragging {
+        opacity: 0.88;
+        transform: scale(1.03);
+        z-index: 100;
+        box-shadow: 0 20px 28px -10px rgba(0, 0, 0, 0.25);
+    }
+
+    .task-card::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: var(--priority-color, #3b82f6);
+    }
+
+    .task-card.priority-high::before {
+        --priority-color: #ef4444;
+    }
+
+    .task-card.priority-medium::before {
+        --priority-color: #f59e0b;
+    }
+
+    .task-card.priority-low::before {
+        --priority-color: #10b981;
+    }
+
+    .task-card.priority-critical::before {
+        --priority-color: #dc2626;
+        animation: pulse 2s infinite;
+    }
+
+    .meta {
+        font-size: 0.75rem;
+        opacity: 0.8;
+    }
+
+    .muted {
+        opacity: 0.65;
+    }
+
+    /* Drag target */
+    .kanban-col.drag-over {
+        border-color: rgba(16, 185, 129, 0.35);
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.12);
+    }
+
+    .toast.show {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    .toast.success {
+        border-left-color: #10b981;
+    }
+
+    .toast.error {
+        border-left-color: #ef4444;
+    }
+
+    .toast.warning {
+        border-left-color: #f59e0b;
+    }
+
+    /* Empty state */
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2.25rem 1rem;
+        text-align: center;
+        color: var(--foreground);
+        opacity: 0.65;
+    }
+
+    .empty-state i {
+        font-size: 2.25rem;
+        margin-bottom: 0.75rem;
+        color: var(--primary);
+    }
+
+    /* Badge */
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    @keyframes pulse {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.5;
+        }
+    }
+
+    @keyframes spin-slow {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .animate-spin-slow {
+        animation: spin-slow 20s linear infinite;
+    }
+
+    .loading-spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid currentColor;
+        border-radius: 50%;
+        border-top-color: transparent;
+        animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* Confirmation Modal */
+    #confirmation-modal .modal {
+        max-width: 400px;
+    }
+
+    /* Checklist Styles */
+    .checklist-builder {
+        transition: all 0.2s ease;
+    }
+
+    .checklist-item {
+        transition: all 0.2s ease;
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    .checklist-item:hover {
+        background: color-mix(in oklab, var(--secondary) 50%, transparent) !important;
+        transform: translateX(2px);
+    }
+
+    .checklist-item.completed {
+        opacity: 0.6;
+    }
+
+    .checklist-item.completed .checklist-text {
+        text-decoration: line-through;
+        color: color-mix(in oklab, var(--foreground) 50%, transparent);
+    }
+
+    .checklist-checkbox {
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .checklist-checkbox:hover {
+        transform: scale(1.1);
+    }
+
+    .checklist-checkbox:checked {
+        animation: checkPop 0.3s ease;
+    }
+
+    @keyframes checkPop {
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.2);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    .remove-checklist-item,
+    .remove-create-checklist-item {
+        opacity: 0;
+        transition: opacity 0.2s ease, color 0.2s ease;
+    }
+
+    .checklist-item:hover .remove-checklist-item,
+    .checklist-item:hover .remove-create-checklist-item {
+        opacity: 1;
+    }
+
+    .add-checklist-item-input input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 10%, transparent);
+    }
+
+    .add-checklist-item-input button:hover {
+        transform: scale(1.05);
+    }
+
+    .add-checklist-item-input button:active {
+        transform: scale(0.95);
+    }
+
+    .kanban-page {
+        min-height: 100vh;
+    }
+
+    .kanban-page button,
+    .kanban-page a,
+    .kanban-page [role="button"] {
+        cursor: pointer;
+    }
+
+    .kanban-page button:disabled {
+        cursor: not-allowed;
+    }
+}
+
+/* Modal styles (extracted from kanban-page to prevent stacking context trapping) */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.52);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+}
+
+.modal-backdrop.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.modal {
+    background: #ffffff;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-radius: 1rem;
+    width: 95%;
+    max-width: 420px;
+    max-height: 90vh;
+    /* Fallback */
+    max-height: 90dvh;
+    overflow-y: auto;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    transform: translateY(-16px);
+    transition: transform 0.25s ease;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.dark .modal {
+    background: #ffffff;
+    border: 1px solid rgba(203, 213, 225, 0.9);
+    color: #0f172a;
+}
+
+.modal input,
+.modal textarea,
+.modal select {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+}
+
+.modal label,
+.modal h2,
+.modal h3,
+.modal p {
+    color: #0f172a;
+}
+
+.modal button,
+.modal a,
+.modal [role="button"],
+.modal input[type="checkbox"],
+.modal input[type="radio"],
+.modal select {
+    cursor: pointer;
+}
+
+.modal button:disabled {
+    cursor: not-allowed;
+}
+
+@media (min-width: 1536px) {
+
+    /* 2xl */
+    .modal {
+        max-width: 500px;
+    }
+}
+
+.modal-backdrop.active .modal {
+    transform: translateY(0);
+}
+
+/* Confirmation Modal */
+#confirmation-modal .modal {
+    max-width: 400px;
+}

@@ -1,0 +1,107 @@
+"use client";
+
+import { createContext, useContext, useEffect, useState } from "react";
+
+type UISettings = {
+    enableGlassmorphism: boolean;
+    enableAnimations: boolean;
+    enableNoise: boolean;
+    themeColor: "indigo" | "violet" | "rose";
+    themeMode: "light" | "dark";
+    sidebarCollapsed: boolean;
+    layoutMode: "boxed" | "full";
+};
+
+type UIContextType = {
+    settings: UISettings;
+    updateSettings: (newSettings: Partial<UISettings>) => void;
+    headerTitle: string;
+    setHeaderTitle: (title: string) => void;
+    headerDescription: string;
+    setHeaderDescription: (desc: string) => void;
+};
+
+const defaultSettings: UISettings = {
+    enableGlassmorphism: true,
+    enableAnimations: true,
+    enableNoise: true,
+    themeColor: "indigo",
+    themeMode: "light",
+    sidebarCollapsed: false,
+    layoutMode: "boxed",
+};
+
+function resolveInitialSettings(): UISettings {
+    if (typeof window === "undefined") return defaultSettings;
+
+    const saved = localStorage.getItem("larago-ui-settings");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const legacyTheme = localStorage.getItem("theme");
+    let resolvedThemeMode: UISettings["themeMode"] = prefersDark ? "dark" : "light";
+
+    if (legacyTheme === "dark" || legacyTheme === "light") {
+        resolvedThemeMode = legacyTheme;
+    }
+
+    if (!saved) {
+        return { ...defaultSettings, themeMode: resolvedThemeMode };
+    }
+
+    try {
+        const parsed = JSON.parse(saved) as Partial<UISettings>;
+        if (parsed.themeMode === "dark" || parsed.themeMode === "light") {
+            resolvedThemeMode = parsed.themeMode;
+        }
+        return { ...defaultSettings, ...parsed, themeMode: resolvedThemeMode };
+    } catch (error) {
+        console.error("Failed to parse UI settings", error);
+        return { ...defaultSettings, themeMode: resolvedThemeMode };
+    }
+}
+
+const UIContext = createContext<UIContextType | undefined>(undefined);
+
+export function UIProvider({ children }: { children: React.ReactNode }) {
+    const [settings, setSettings] = useState<UISettings>(resolveInitialSettings);
+    const [headerTitle, setHeaderTitle] = useState("");
+    const [headerDescription, setHeaderDescription] = useState("");
+
+    useEffect(() => {
+        document.documentElement.classList.toggle("dark", settings.themeMode === "dark");
+        localStorage.setItem("theme", settings.themeMode);
+    }, [settings.themeMode]);
+
+    const updateSettings = (newSettings: Partial<UISettings>) => {
+        setSettings((prev) => {
+            const updated = { ...prev, ...newSettings };
+            localStorage.setItem("larago-ui-settings", JSON.stringify(updated));
+            if (newSettings.themeMode) {
+                document.documentElement.classList.toggle("dark", newSettings.themeMode === "dark");
+                localStorage.setItem("theme", newSettings.themeMode);
+            }
+            return updated;
+        });
+    };
+
+    return (
+        <UIContext.Provider value={{ settings, updateSettings, headerTitle, setHeaderTitle, headerDescription, setHeaderDescription }}>
+            <div
+                data-theme-color={settings.themeColor}
+                className={settings.enableNoise ? "ui-noise-bg" : ""}
+            >
+                {children}
+                {settings.enableNoise && (
+                    <div className="pointer-events-none fixed inset-0 z-[99999] h-full w-full opacity-[0.03] before:content-[''] before:fixed before:inset-0 before:bg-[url('https://grainy-gradients.vercel.app/noise.svg')] before:bg-repeat" />
+                )}
+            </div>
+        </UIContext.Provider>
+    );
+}
+
+export const useUI = () => {
+    const context = useContext(UIContext);
+    if (context === undefined) {
+        throw new Error("useUI must be used within a UIProvider");
+    }
+    return context;
+};

@@ -1,0 +1,1866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Management</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #eef5f3;
+      --bg-soft: #f8fbfa;
+      --surface: rgba(255, 255, 255, 0.86);
+      --surface-solid: #ffffff;
+      --surface-hover: #f6fbf9;
+      --text: #10201b;
+      --text-muted: #667a72;
+      --border: rgba(16, 32, 27, 0.1);
+      --border-strong: rgba(16, 32, 27, 0.16);
+      --primary: #10b981;
+      --primary-dark: #059669;
+      --primary-light: #d1fae5;
+      --blue: #2563eb;
+      --blue-light: #dbeafe;
+      --red: #ef4444;
+      --red-dark: #dc2626;
+      --red-light: #fee2e2;
+      --yellow: #f59e0b;
+      --yellow-light: #fef3c7;
+      --purple: #7c3aed;
+      --purple-light: #ede9fe;
+      --shadow-sm: 0 8px 24px rgba(15, 23, 42, 0.06);
+      --shadow-md: 0 18px 50px rgba(15, 23, 42, 0.12);
+      --shadow-lg: 0 24px 80px rgba(15, 23, 42, 0.2);
+      --radius-sm: 12px;
+      --radius-md: 18px;
+      --radius-lg: 28px;
+      --ease: cubic-bezier(.2,.8,.2,1);
+    }
+
+    html {
+      min-height: 100%;
+      background: var(--bg);
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      padding: 2rem;
+      background:
+        radial-gradient(circle at top left, rgba(16, 185, 129, 0.28), transparent 34rem),
+        radial-gradient(circle at top right, rgba(37, 99, 235, 0.18), transparent 30rem),
+        linear-gradient(135deg, #eef5f3 0%, #f8fbfa 46%, #eef7ff 100%);
+    }
+
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .container {
+      width: min(1440px, 100%);
+      margin: 0 auto;
+      opacity: 0;
+    }
+
+    .shell {
+      display: grid;
+      gap: 1.25rem;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      min-height: 230px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      background:
+        linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(255, 255, 255, 0.78)),
+        rgba(255, 255, 255, 0.72);
+      box-shadow: var(--shadow-md);
+      backdrop-filter: blur(20px);
+    }
+
+    .hero::before,
+    .hero::after {
+      content: "";
+      position: absolute;
+      border-radius: 999px;
+      pointer-events: none;
+    }
+
+    .hero::before {
+      width: 280px;
+      height: 280px;
+      right: -90px;
+      top: -120px;
+      background: rgba(16, 185, 129, 0.2);
+    }
+
+    .hero::after {
+      width: 190px;
+      height: 190px;
+      right: 140px;
+      bottom: -115px;
+      background: rgba(37, 99, 235, 0.13);
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1.5rem;
+      min-height: 100%;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.45rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(16, 185, 129, 0.22);
+      background: rgba(255, 255, 255, 0.68);
+      color: var(--primary-dark);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    .eyebrow-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 0 5px rgba(16, 185, 129, 0.14);
+    }
+
+    .hero-title {
+      max-width: 740px;
+      font-size: clamp(2.1rem, 5vw, 4.6rem);
+      line-height: 0.95;
+      letter-spacing: -0.07em;
+      margin-bottom: 0.9rem;
+    }
+
+    .hero-copy {
+      max-width: 680px;
+      color: var(--text-muted);
+      font-size: 1rem;
+      line-height: 1.65;
+    }
+
+    .hero-panel {
+      min-width: 260px;
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.72);
+      box-shadow: var(--shadow-sm);
+      padding: 1rem;
+    }
+
+    .hero-panel-title {
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.8rem;
+    }
+
+    .health-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.8rem;
+      border-radius: 16px;
+      background: var(--bg-soft);
+    }
+
+    .health-row + .health-row {
+      margin-top: 0.65rem;
+    }
+
+    .health-label {
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    .health-value {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: var(--primary-dark);
+    }
+
+    .pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+      animation: pulse 1.7s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+      70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 1rem;
+      align-items: center;
+      padding: 1rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      box-shadow: var(--shadow-sm);
+      backdrop-filter: blur(18px);
+    }
+
+    .toolbar-left,
+    .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .search-box {
+      position: relative;
+      flex: 1 1 320px;
+      min-width: 260px;
+    }
+
+    .search-box svg {
+      position: absolute;
+      left: 0.95rem;
+      top: 50%;
+      width: 18px;
+      height: 18px;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .search-box input,
+    .filter-select,
+    .form-control {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid var(--border-strong);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease), background 0.2s var(--ease);
+    }
+
+    .search-box input {
+      padding: 0.65rem 1rem 0.65rem 2.75rem;
+    }
+
+    .filter-select {
+      padding: 0.65rem 2.4rem 0.65rem 0.9rem;
+      cursor: pointer;
+    }
+
+    .form-control {
+      padding: 0.7rem 0.9rem;
+    }
+
+    .search-box input:focus,
+    .filter-select:focus,
+    .form-control:focus {
+      border-color: rgba(16, 185, 129, 0.66);
+      box-shadow: 0 0 0 5px rgba(16, 185, 129, 0.12);
+      background: #fff;
+    }
+
+    .btn {
+      min-height: 44px;
+      border: none;
+      border-radius: 14px;
+      padding: 0.65rem 1rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.18s var(--ease), box-shadow 0.18s var(--ease), background 0.18s var(--ease), color 0.18s var(--ease);
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary {
+      color: white;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      box-shadow: 0 12px 24px rgba(16, 185, 129, 0.28);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 18px 32px rgba(16, 185, 129, 0.34);
+    }
+
+    .btn-secondary {
+      color: var(--blue);
+      background: var(--blue-light);
+    }
+
+    .btn-secondary:hover {
+      background: #c7dffd;
+    }
+
+    .btn-danger {
+      color: var(--red-dark);
+      background: var(--red-light);
+    }
+
+    .btn-danger:hover {
+      background: #fecaca;
+    }
+
+    .btn-ghost {
+      color: var(--text);
+      background: rgba(16, 32, 27, 0.06);
+    }
+
+    .btn-ghost:hover {
+      background: rgba(16, 32, 27, 0.1);
+    }
+
+    .btn-sm {
+      min-height: 36px;
+      padding: 0.45rem 0.7rem;
+      border-radius: 11px;
+      font-size: 0.78rem;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    .stat-card {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      padding: 1.15rem;
+      box-shadow: var(--shadow-sm);
+      backdrop-filter: blur(18px);
+    }
+
+    .stat-card::after {
+      content: "";
+      position: absolute;
+      right: -30px;
+      top: -30px;
+      width: 95px;
+      height: 95px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      opacity: 0.7;
+    }
+
+    .stat-card.blue::after { background: var(--blue-light); }
+    .stat-card.red::after { background: var(--red-light); }
+    .stat-card.purple::after { background: var(--purple-light); }
+
+    .stat-icon {
+      position: relative;
+      z-index: 1;
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      color: var(--primary-dark);
+      background: var(--primary-light);
+      margin-bottom: 0.95rem;
+    }
+
+    .stat-card.blue .stat-icon { color: var(--blue); background: var(--blue-light); }
+    .stat-card.red .stat-icon { color: var(--red-dark); background: var(--red-light); }
+    .stat-card.purple .stat-icon { color: var(--purple); background: var(--purple-light); }
+
+    .stat-card h3 {
+      position: relative;
+      z-index: 1;
+      font-size: 2rem;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      margin-bottom: 0.45rem;
+    }
+
+    .stat-card p {
+      position: relative;
+      z-index: 1;
+      color: var(--text-muted);
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+
+    .table-card {
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      box-shadow: var(--shadow-md);
+      backdrop-filter: blur(18px);
+    }
+
+    .table-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1.15rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .table-header h2 {
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+    }
+
+    .table-header p {
+      margin-top: 0.2rem;
+      color: var(--text-muted);
+      font-size: 0.84rem;
+    }
+
+    .result-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 34px;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      color: var(--primary-dark);
+      background: var(--primary-light);
+      font-size: 0.78rem;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+    }
+
+    .user-table {
+      width: 100%;
+      min-width: 840px;
+      border-collapse: collapse;
+    }
+
+    .user-table th {
+      padding: 0.95rem 1.25rem;
+      color: var(--text-muted);
+      background: rgba(248, 251, 250, 0.82);
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .user-table td {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    .user-table tbody tr {
+      transition: background 0.18s var(--ease), transform 0.18s var(--ease);
+    }
+
+    .user-table tbody tr:hover {
+      background: var(--surface-hover);
+    }
+
+    .user-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .user-avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 17px;
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      color: white;
+      background:
+        radial-gradient(circle at 30% 20%, rgba(255,255,255,0.42), transparent 28%),
+        linear-gradient(135deg, var(--blue), var(--primary));
+      font-weight: 900;
+      box-shadow: 0 10px 22px rgba(37, 99, 235, 0.18);
+    }
+
+    .user-details h4 {
+      font-size: 0.94rem;
+      font-weight: 900;
+      margin-bottom: 0.16rem;
+    }
+
+    .user-details p,
+    .muted-cell {
+      color: var(--text-muted);
+      font-size: 0.82rem;
+    }
+
+    .role-badge,
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      min-height: 30px;
+      padding: 0.35rem 0.72rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 900;
+      text-transform: capitalize;
+    }
+
+    .role-badge.admin { color: var(--red-dark); background: var(--red-light); }
+    .role-badge.manager { color: #b45309; background: var(--yellow-light); }
+    .role-badge.member { color: var(--primary-dark); background: var(--primary-light); }
+    .role-badge.viewer { color: var(--blue); background: var(--blue-light); }
+
+    .status-cell {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .status-badge.active { color: var(--primary-dark); background: var(--primary-light); }
+    .status-badge.inactive { color: var(--text-muted); background: rgba(100, 116, 139, 0.12); }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .status-toggle {
+      position: relative;
+      width: 50px;
+      height: 28px;
+      flex: 0 0 auto;
+      border: none;
+      border-radius: 999px;
+      background: rgba(100, 116, 139, 0.22);
+      cursor: pointer;
+      transition: background 0.25s var(--ease), box-shadow 0.25s var(--ease);
+    }
+
+    .status-toggle::after {
+      content: "";
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      top: 3px;
+      left: 3px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.16);
+      transition: transform 0.25s var(--ease);
+    }
+
+    .status-toggle.active {
+      background: var(--primary);
+      box-shadow: 0 8px 16px rgba(16, 185, 129, 0.22);
+    }
+
+    .status-toggle.active::after {
+      transform: translateX(22px);
+    }
+
+    .action-buttons {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .empty-state {
+      display: grid;
+      place-items: center;
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-muted);
+    }
+
+    .empty-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 20px;
+      display: grid;
+      place-items: center;
+      color: var(--primary-dark);
+      background: var(--primary-light);
+      margin-bottom: 1rem;
+    }
+
+    .empty-state h3 {
+      color: var(--text);
+      font-size: 1.1rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .mobile-list {
+      display: none;
+      padding: 1rem;
+      gap: 0.85rem;
+    }
+
+    .mobile-card {
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.74);
+      padding: 1rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .mobile-card-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.9rem;
+    }
+
+    .mobile-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin: 0.9rem 0;
+    }
+
+    .mobile-meta-item {
+      border-radius: 14px;
+      background: var(--bg-soft);
+      padding: 0.75rem;
+    }
+
+    .mobile-meta-item span {
+      display: block;
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.25rem;
+    }
+
+    .mobile-meta-item strong {
+      font-size: 0.86rem;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      background: rgba(15, 23, 42, 0.48);
+      backdrop-filter: blur(10px);
+    }
+
+    .modal {
+      width: min(560px, 100%);
+      max-height: min(760px, 92vh);
+      overflow: auto;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 28px;
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .modal-sm {
+      width: min(430px, 100%);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1.35rem 1.35rem 0.85rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-header h2 {
+      font-size: 1.3rem;
+      letter-spacing: -0.035em;
+      margin-bottom: 0.25rem;
+    }
+
+    .modal-header p {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border: none;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      color: var(--text-muted);
+      background: rgba(15, 23, 42, 0.06);
+      cursor: pointer;
+      transition: background 0.18s var(--ease), color 0.18s var(--ease);
+    }
+
+    .icon-btn:hover {
+      color: var(--text);
+      background: rgba(15, 23, 42, 0.1);
+    }
+
+    .modal-body {
+      padding: 1.35rem;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      color: var(--text);
+      font-size: 0.84rem;
+      font-weight: 900;
+      margin-bottom: 0.5rem;
+    }
+
+    .hint {
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .form-error {
+      display: none;
+      margin-top: 0.45rem;
+      color: var(--red-dark);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      padding-top: 0.5rem;
+    }
+
+    .danger-zone {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      padding: 1rem;
+      border-radius: 20px;
+      background: var(--red-light);
+      color: var(--red-dark);
+      margin-bottom: 1rem;
+    }
+
+    .danger-zone svg {
+      flex: 0 0 auto;
+      margin-top: 0.1rem;
+    }
+
+    .danger-zone strong {
+      display: block;
+      color: var(--text);
+      margin-bottom: 0.2rem;
+    }
+
+    .danger-zone p {
+      color: #991b1b;
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+
+    .toast-stack {
+      position: fixed;
+      right: 1.5rem;
+      bottom: 1.5rem;
+      z-index: 80;
+      display: grid;
+      gap: 0.75rem;
+      pointer-events: none;
+    }
+
+    .toast {
+      min-width: min(360px, calc(100vw - 2rem));
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.9rem 1rem;
+      border-radius: 18px;
+      color: #fff;
+      background: rgba(15, 23, 42, 0.94);
+      box-shadow: var(--shadow-md);
+      opacity: 0;
+      transform: translateY(20px) scale(0.96);
+    }
+
+    .toast-icon {
+      width: 24px;
+      height: 24px;
+      flex: 0 0 auto;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      color: #fff;
+      background: var(--primary);
+    }
+
+    .toast.error .toast-icon {
+      background: var(--red);
+    }
+
+    .toast strong {
+      display: block;
+      font-size: 0.87rem;
+      margin-bottom: 0.15rem;
+    }
+
+    .toast span {
+      display: block;
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 0.78rem;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 1100px) {
+      .hero-content {
+        flex-direction: column;
+      }
+
+      .hero-panel {
+        width: 100%;
+        min-width: 0;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .toolbar {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      body {
+        padding: 1rem;
+      }
+
+      .hero {
+        border-radius: 24px;
+        padding: 1.15rem;
+      }
+
+      .hero-title {
+        font-size: 2.5rem;
+      }
+
+      .toolbar-left,
+      .toolbar-right,
+      .search-box,
+      .filter-select,
+      .btn {
+        width: 100%;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .table-wrap {
+        display: none;
+      }
+
+      .mobile-list {
+        display: grid;
+      }
+
+      .table-header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .form-row,
+      .mobile-meta {
+        grid-template-columns: 1fr;
+      }
+
+      .modal-actions {
+        flex-direction: column-reverse;
+      }
+
+      .toast-stack {
+        left: 1rem;
+        right: 1rem;
+        bottom: 1rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="container" id="container">
+    <div class="shell">
+      <section class="toolbar" aria-label="User controls">
+        <div class="toolbar-left">
+          <div class="search-box">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="M21 21l-4.35-4.35"></path>
+            </svg>
+            <input type="search" id="search-input" placeholder="Search by name, email, department, or phone..." autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="toolbar-right">
+          <select class="filter-select" id="role-filter" aria-label="Filter by role">
+            <option value="">All Roles</option>
+            <option value="admin">Admin</option>
+            <option value="manager">Manager</option>
+            <option value="member">Member</option>
+            <option value="viewer">Viewer</option>
+          </select>
+
+          <select class="filter-select" id="status-filter" aria-label="Filter by status">
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+
+          <button class="btn btn-ghost" type="button" id="reset-demo-btn">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 12a9 9 0 1 0 3-6.7"></path>
+              <path d="M3 4v6h6"></path>
+            </svg>
+            Reset Demo
+          </button>
+
+          <button class="btn btn-primary" type="button" id="add-user-btn">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M19 8v6"></path>
+              <path d="M22 11h-6"></path>
+            </svg>
+            Add User
+          </button>
+        </div>
+      </section>
+
+      <section class="stats-grid" aria-label="User stats">
+        <article class="stat-card">
+          <div class="stat-icon">
+            <svg width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+          </div>
+          <h3 id="stat-total">0</h3>
+          <p>Total Users</p>
+        </article>
+
+        <article class="stat-card blue">
+          <div class="stat-icon">
+            <svg width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 6 9 17l-5-5"></path>
+            </svg>
+          </div>
+          <h3 id="stat-active">0</h3>
+          <p>Active Users</p>
+        </article>
+
+        <article class="stat-card red">
+          <div class="stat-icon">
+            <svg width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M18 6 6 18"></path>
+              <path d="m6 6 12 12"></path>
+            </svg>
+          </div>
+          <h3 id="stat-inactive">0</h3>
+          <p>Inactive Users</p>
+        </article>
+
+        <article class="stat-card purple">
+          <div class="stat-icon">
+            <svg width="21" height="21" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"></path>
+              <path d="m9 12 2 2 4-4"></path>
+            </svg>
+          </div>
+          <h3 id="stat-admins">0</h3>
+          <p>Administrators</p>
+        </article>
+      </section>
+
+      <section class="table-card" aria-label="Users table">
+        <div class="table-header">
+          <div>
+            <h2>All Users</h2>
+            <p>Search, filter, edit, deactivate, or delete users.</p>
+          </div>
+          <div class="result-pill" id="result-count">0 results</div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="user-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Department</th>
+                <th>Joined</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users-table-body"></tbody>
+          </table>
+        </div>
+
+        <div class="mobile-list" id="mobile-users-list"></div>
+      </section>
+    </div>
+  </main>
+
+  <div class="modal-overlay" id="user-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-hidden="true">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <h2 id="modal-title">Add New User</h2>
+          <p id="modal-description">Fill in the details to create a new user account.</p>
+        </div>
+        <button class="icon-btn" type="button" data-close-modal="user-modal" aria-label="Close user modal">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 6 6 18"></path>
+            <path d="m6 6 12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form id="user-form" novalidate>
+          <input type="hidden" id="user-id" />
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="first-name">First Name <span class="hint">Required</span></label>
+              <input class="form-control" type="text" id="first-name" required placeholder="John" autocomplete="given-name" />
+              <div class="form-error" id="first-name-error">First name is required.</div>
+            </div>
+
+            <div class="form-group">
+              <label for="last-name">Last Name <span class="hint">Required</span></label>
+              <input class="form-control" type="text" id="last-name" required placeholder="Doe" autocomplete="family-name" />
+              <div class="form-error" id="last-name-error">Last name is required.</div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email Address <span class="hint">Required</span></label>
+            <input class="form-control" type="email" id="email" required placeholder="john.doe@company.com" autocomplete="email" />
+            <div class="form-error" id="email-error">Use a valid and unique email address.</div>
+          </div>
+
+          <div class="form-group">
+            <label for="role">Role <span class="hint">Required</span></label>
+            <select class="form-control" id="role" required>
+              <option value="">Select Role</option>
+              <option value="admin">Administrator</option>
+              <option value="manager">Manager</option>
+              <option value="member">Member</option>
+              <option value="viewer">Viewer</option>
+            </select>
+            <div class="form-error" id="role-error">Role is required.</div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="department">Department <span class="hint">Optional</span></label>
+              <input class="form-control" type="text" id="department" placeholder="Engineering" autocomplete="organization-title" />
+            </div>
+
+            <div class="form-group">
+              <label for="phone">Phone <span class="hint">Optional</span></label>
+              <input class="form-control" type="tel" id="phone" placeholder="+1 (555) 000-0000" autocomplete="tel" />
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" data-close-modal="user-modal">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="save-user-btn">Save User</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title" aria-hidden="true">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <div>
+          <h2 id="delete-modal-title">Delete User</h2>
+          <p>This action cannot be undone.</p>
+        </div>
+        <button class="icon-btn" type="button" data-close-modal="delete-modal" aria-label="Close delete modal">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 6 6 18"></path>
+            <path d="m6 6 12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="danger-zone">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"></path>
+            <path d="M12 9v4"></path>
+            <path d="M12 17h.01"></path>
+          </svg>
+          <div>
+            <strong id="delete-user-name">Delete this user?</strong>
+            <p>The user will be removed from this local demo list.</p>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn btn-ghost" type="button" data-close-modal="delete-modal">Cancel</button>
+          <button class="btn btn-danger" type="button" id="confirm-delete-btn">Delete User</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toast-stack" aria-live="polite" aria-atomic="true"></div>
+
+  <script>
+    const STORAGE_KEY = 'golem-user-management-users-v2';
+
+    const defaultUsers = [
+      { id: 1, firstName: 'Alice', lastName: 'Johnson', email: 'alice@company.com', role: 'admin', status: 'active', department: 'Engineering', phone: '+1 (555) 123-4567', joined: '2024-01-15' },
+      { id: 2, firstName: 'Bob', lastName: 'Smith', email: 'bob@company.com', role: 'manager', status: 'active', department: 'Marketing', phone: '+1 (555) 234-5678', joined: '2024-02-20' },
+      { id: 3, firstName: 'Carol', lastName: 'Williams', email: 'carol@company.com', role: 'member', status: 'active', department: 'Design', phone: '+1 (555) 345-6789', joined: '2024-03-10' },
+      { id: 4, firstName: 'David', lastName: 'Brown', email: 'david@company.com', role: 'viewer', status: 'inactive', department: 'Sales', phone: '+1 (555) 456-7890', joined: '2024-04-05' },
+      { id: 5, firstName: 'Emma', lastName: 'Davis', email: 'emma@company.com', role: 'member', status: 'active', department: 'Engineering', phone: '+1 (555) 567-8901', joined: '2024-05-12' },
+      { id: 6, firstName: 'Miguel', lastName: 'Torres', email: 'miguel@company.com', role: 'manager', status: 'active', department: 'Operations', phone: '+52 (55) 1234-9876', joined: '2024-06-18' }
+    ];
+
+    let users = loadUsers();
+    let filteredUsers = [...users];
+    let editingUserId = null;
+    let deletingUserId = null;
+    let lastFocusedElement = null;
+
+    const elements = {
+      container: document.getElementById('container'),
+      searchInput: document.getElementById('search-input'),
+      roleFilter: document.getElementById('role-filter'),
+      statusFilter: document.getElementById('status-filter'),
+      addUserBtn: document.getElementById('add-user-btn'),
+      resetDemoBtn: document.getElementById('reset-demo-btn'),
+      tableBody: document.getElementById('users-table-body'),
+      mobileList: document.getElementById('mobile-users-list'),
+      resultCount: document.getElementById('result-count'),
+      statTotal: document.getElementById('stat-total'),
+      statActive: document.getElementById('stat-active'),
+      statInactive: document.getElementById('stat-inactive'),
+      statAdmins: document.getElementById('stat-admins'),
+      userModal: document.getElementById('user-modal'),
+      deleteModal: document.getElementById('delete-modal'),
+      userForm: document.getElementById('user-form'),
+      modalTitle: document.getElementById('modal-title'),
+      modalDescription: document.getElementById('modal-description'),
+      saveUserBtn: document.getElementById('save-user-btn'),
+      confirmDeleteBtn: document.getElementById('confirm-delete-btn'),
+      deleteUserName: document.getElementById('delete-user-name'),
+      toastStack: document.getElementById('toast-stack')
+    };
+
+    function init() {
+      bindEvents();
+      applyFilters();
+      updateStats(true);
+      runIntroAnimation();
+    }
+
+    function bindEvents() {
+      elements.searchInput.addEventListener('input', debounce(applyFilters, 120));
+      elements.roleFilter.addEventListener('change', applyFilters);
+      elements.statusFilter.addEventListener('change', applyFilters);
+      elements.addUserBtn.addEventListener('click', () => openUserModal());
+      elements.resetDemoBtn.addEventListener('click', resetDemoData);
+      elements.userForm.addEventListener('submit', saveUser);
+      elements.confirmDeleteBtn.addEventListener('click', confirmDelete);
+
+      document.addEventListener('click', event => {
+        const editButton = event.target.closest('[data-action="edit"]');
+        const deleteButton = event.target.closest('[data-action="delete"]');
+        const statusButton = event.target.closest('[data-action="toggle-status"]');
+        const closeButton = event.target.closest('[data-close-modal]');
+
+        if (editButton) editUser(Number(editButton.dataset.userId));
+        if (deleteButton) openDeleteModal(Number(deleteButton.dataset.userId));
+        if (statusButton) toggleStatus(Number(statusButton.dataset.userId));
+        if (closeButton) closeModal(closeButton.dataset.closeModal);
+      });
+
+      elements.userModal.addEventListener('click', event => {
+        if (event.target === elements.userModal) closeUserModal();
+      });
+
+      elements.deleteModal.addEventListener('click', event => {
+        if (event.target === elements.deleteModal) closeDeleteModal();
+      });
+
+      document.addEventListener('keydown', event => {
+        if (event.key === 'Escape') {
+          if (isModalOpen(elements.userModal)) closeUserModal();
+          if (isModalOpen(elements.deleteModal)) closeDeleteModal();
+        }
+      });
+    }
+
+    function loadUsers() {
+      const storedUsers = localStorage.getItem(STORAGE_KEY);
+
+      if (!storedUsers) {
+        return structuredClone(defaultUsers);
+      }
+
+      try {
+        const parsedUsers = JSON.parse(storedUsers);
+        if (!Array.isArray(parsedUsers)) return structuredClone(defaultUsers);
+        return parsedUsers;
+      } catch {
+        return structuredClone(defaultUsers);
+      }
+    }
+
+    function persistUsers() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
+    }
+
+    function resetDemoData() {
+      users = structuredClone(defaultUsers);
+      persistUsers();
+      applyFilters();
+      updateStats();
+      showToast('Demo data restored', 'The user list was reset to the default demo records.');
+    }
+
+    function applyFilters() {
+      const search = elements.searchInput.value.trim().toLowerCase();
+      const role = elements.roleFilter.value;
+      const status = elements.statusFilter.value;
+
+      filteredUsers = users.filter(user => {
+        const haystack = [
+          user.firstName,
+          user.lastName,
+          user.email,
+          user.department,
+          user.phone,
+          user.role,
+          user.status
+        ].join(' ').toLowerCase();
+
+        const matchesSearch = !search || haystack.includes(search);
+        const matchesRole = !role || user.role === role;
+        const matchesStatus = !status || user.status === status;
+
+        return matchesSearch && matchesRole && matchesStatus;
+      });
+
+      renderUsers(filteredUsers);
+    }
+
+    function renderUsers(usersToRender) {
+      elements.resultCount.textContent = `${usersToRender.length} ${usersToRender.length === 1 ? 'result' : 'results'}`;
+
+      if (usersToRender.length === 0) {
+        const emptyMarkup = getEmptyStateMarkup();
+        elements.tableBody.innerHTML = `<tr><td colspan="6">${emptyMarkup}</td></tr>`;
+        elements.mobileList.innerHTML = emptyMarkup;
+        animateRows();
+        return;
+      }
+
+      elements.tableBody.innerHTML = usersToRender.map(user => renderUserRow(user)).join('');
+      elements.mobileList.innerHTML = usersToRender.map(user => renderMobileUserCard(user)).join('');
+      animateRows();
+    }
+
+    function renderUserRow(user) {
+      const fullName = getFullName(user);
+      const initials = getInitials(user);
+      const role = escapeHTML(user.role);
+      const status = escapeHTML(user.status);
+
+      return `
+        <tr data-id="${Number(user.id)}">
+          <td>
+            <div class="user-info">
+              <div class="user-avatar" aria-hidden="true">${escapeHTML(initials)}</div>
+              <div class="user-details">
+                <h4>${escapeHTML(fullName)}</h4>
+                <p>${escapeHTML(user.email)}</p>
+              </div>
+            </div>
+          </td>
+          <td><span class="role-badge ${role}">${getRoleLabel(user.role)}</span></td>
+          <td>
+            <div class="status-cell">
+              <span class="status-badge ${status}"><span class="status-dot"></span>${status}</span>
+              <button
+                class="status-toggle ${user.status === 'active' ? 'active' : ''}"
+                type="button"
+                data-action="toggle-status"
+                data-user-id="${Number(user.id)}"
+                aria-label="Toggle status for ${escapeHTML(fullName)}"
+                aria-pressed="${user.status === 'active'}">
+              </button>
+            </div>
+          </td>
+          <td class="muted-cell">${escapeHTML(user.department || '—')}</td>
+          <td class="muted-cell">${escapeHTML(formatDate(user.joined))}</td>
+          <td>
+            <div class="action-buttons">
+              <button class="btn btn-secondary btn-sm" type="button" data-action="edit" data-user-id="${Number(user.id)}">Edit</button>
+              <button class="btn btn-danger btn-sm" type="button" data-action="delete" data-user-id="${Number(user.id)}">Delete</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+
+    function renderMobileUserCard(user) {
+      const fullName = getFullName(user);
+      const initials = getInitials(user);
+      const role = escapeHTML(user.role);
+      const status = escapeHTML(user.status);
+
+      return `
+        <article class="mobile-card" data-id="${Number(user.id)}">
+          <div class="mobile-card-top">
+            <div class="user-info">
+              <div class="user-avatar" aria-hidden="true">${escapeHTML(initials)}</div>
+              <div class="user-details">
+                <h4>${escapeHTML(fullName)}</h4>
+                <p>${escapeHTML(user.email)}</p>
+              </div>
+            </div>
+            <button
+              class="status-toggle ${user.status === 'active' ? 'active' : ''}"
+              type="button"
+              data-action="toggle-status"
+              data-user-id="${Number(user.id)}"
+              aria-label="Toggle status for ${escapeHTML(fullName)}"
+              aria-pressed="${user.status === 'active'}">
+            </button>
+          </div>
+
+          <div class="mobile-meta">
+            <div class="mobile-meta-item">
+              <span>Role</span>
+              <strong><span class="role-badge ${role}">${getRoleLabel(user.role)}</span></strong>
+            </div>
+            <div class="mobile-meta-item">
+              <span>Status</span>
+              <strong><span class="status-badge ${status}"><span class="status-dot"></span>${status}</span></strong>
+            </div>
+            <div class="mobile-meta-item">
+              <span>Department</span>
+              <strong>${escapeHTML(user.department || '—')}</strong>
+            </div>
+            <div class="mobile-meta-item">
+              <span>Joined</span>
+              <strong>${escapeHTML(formatDate(user.joined))}</strong>
+            </div>
+          </div>
+
+          <div class="action-buttons">
+            <button class="btn btn-secondary btn-sm" type="button" data-action="edit" data-user-id="${Number(user.id)}">Edit</button>
+            <button class="btn btn-danger btn-sm" type="button" data-action="delete" data-user-id="${Number(user.id)}">Delete</button>
+          </div>
+        </article>
+      `;
+    }
+
+    function getEmptyStateMarkup() {
+      return `
+        <div class="empty-state">
+          <div class="empty-icon">
+            <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="M21 21l-4.35-4.35"></path>
+            </svg>
+          </div>
+          <h3>No users found</h3>
+          <p>Try changing the search text or filters.</p>
+        </div>
+      `;
+    }
+
+    function updateStats(skipAnimation = false) {
+      const stats = {
+        total: users.length,
+        active: users.filter(user => user.status === 'active').length,
+        inactive: users.filter(user => user.status === 'inactive').length,
+        admins: users.filter(user => user.role === 'admin').length
+      };
+
+      setCounter(elements.statTotal, stats.total, skipAnimation);
+      setCounter(elements.statActive, stats.active, skipAnimation);
+      setCounter(elements.statInactive, stats.inactive, skipAnimation);
+      setCounter(elements.statAdmins, stats.admins, skipAnimation);
+    }
+
+    function setCounter(element, value, skipAnimation) {
+      if (skipAnimation || !window.gsap) {
+        element.textContent = value;
+        return;
+      }
+
+      const current = Number(element.textContent) || 0;
+      const counter = { value: current };
+
+      gsap.to(counter, {
+        value,
+        duration: 0.35,
+        ease: 'power2.out',
+        onUpdate: () => {
+          element.textContent = Math.round(counter.value);
+        }
+      });
+    }
+
+    function openUserModal(userId = null) {
+      editingUserId = userId;
+      lastFocusedElement = document.activeElement;
+      clearFormErrors();
+      elements.userForm.reset();
+      document.getElementById('user-id').value = '';
+
+      if (userId) {
+        const user = users.find(item => item.id === userId);
+        if (!user) return;
+
+        elements.modalTitle.textContent = 'Edit User';
+        elements.modalDescription.textContent = 'Update user details, role, department, and contact information.';
+        elements.saveUserBtn.textContent = 'Update User';
+
+        document.getElementById('user-id').value = user.id;
+        document.getElementById('first-name').value = user.firstName;
+        document.getElementById('last-name').value = user.lastName;
+        document.getElementById('email').value = user.email;
+        document.getElementById('role').value = user.role;
+        document.getElementById('department').value = user.department || '';
+        document.getElementById('phone').value = user.phone || '';
+      } else {
+        elements.modalTitle.textContent = 'Add New User';
+        elements.modalDescription.textContent = 'Fill in the details to create a new user account.';
+        elements.saveUserBtn.textContent = 'Save User';
+      }
+
+      openModal(elements.userModal, '#first-name');
+    }
+
+    function closeUserModal() {
+      editingUserId = null;
+      closeModal('user-modal');
+    }
+
+    function saveUser(event) {
+      event.preventDefault();
+      clearFormErrors();
+
+      const userData = {
+        firstName: document.getElementById('first-name').value.trim(),
+        lastName: document.getElementById('last-name').value.trim(),
+        email: document.getElementById('email').value.trim().toLowerCase(),
+        role: document.getElementById('role').value,
+        department: document.getElementById('department').value.trim(),
+        phone: document.getElementById('phone').value.trim()
+      };
+
+      const validation = validateUser(userData, editingUserId);
+
+      if (!validation.valid) {
+        showFormErrors(validation.errors);
+        showToast('Check the form', 'Some fields need your attention.', 'error');
+        return;
+      }
+
+      if (editingUserId) {
+        const index = users.findIndex(user => user.id === editingUserId);
+        if (index === -1) return;
+
+        users[index] = {
+          ...users[index],
+          ...userData
+        };
+
+        showToast('User updated', `${getFullName(users[index])} was updated successfully.`);
+      } else {
+        const newUser = {
+          id: Date.now(),
+          ...userData,
+          status: 'active',
+          joined: new Date().toISOString().split('T')[0]
+        };
+
+        users.unshift(newUser);
+        showToast('User added', `${getFullName(newUser)} was added successfully.`);
+      }
+
+      persistUsers();
+      closeUserModal();
+      applyFilters();
+      updateStats();
+    }
+
+    function validateUser(userData, currentUserId = null) {
+      const errors = {};
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      if (!userData.firstName) errors.firstName = 'First name is required.';
+      if (!userData.lastName) errors.lastName = 'Last name is required.';
+      if (!emailPattern.test(userData.email)) errors.email = 'Use a valid email address.';
+      if (!userData.role) errors.role = 'Role is required.';
+
+      const emailExists = users.some(user => {
+        const sameEmail = user.email.toLowerCase() === userData.email.toLowerCase();
+        const differentUser = Number(user.id) !== Number(currentUserId);
+        return sameEmail && differentUser;
+      });
+
+      if (emailExists) errors.email = 'Another user already has this email address.';
+
+      return {
+        valid: Object.keys(errors).length === 0,
+        errors
+      };
+    }
+
+    function showFormErrors(errors) {
+      const fieldMap = {
+        firstName: 'first-name',
+        lastName: 'last-name',
+        email: 'email',
+        role: 'role'
+      };
+
+      Object.entries(errors).forEach(([key, message]) => {
+        const inputId = fieldMap[key];
+        const input = document.getElementById(inputId);
+        const error = document.getElementById(`${inputId}-error`);
+
+        if (!input || !error) return;
+
+        input.style.borderColor = 'rgba(239, 68, 68, 0.8)';
+        input.style.boxShadow = '0 0 0 5px rgba(239, 68, 68, 0.1)';
+        error.textContent = message;
+        error.style.display = 'block';
+      });
+
+      const firstInvalidKey = Object.keys(errors)[0];
+      const firstInvalidInputId = fieldMap[firstInvalidKey];
+      if (firstInvalidInputId) document.getElementById(firstInvalidInputId).focus();
+    }
+
+    function clearFormErrors() {
+      document.querySelectorAll('.form-error').forEach(error => {
+        error.style.display = 'none';
+      });
+
+      document.querySelectorAll('.form-control').forEach(input => {
+        input.style.borderColor = '';
+        input.style.boxShadow = '';
+      });
+    }
+
+    function editUser(userId) {
+      openUserModal(userId);
+    }
+
+    function openDeleteModal(userId) {
+      const user = users.find(item => item.id === userId);
+      if (!user) return;
+
+      deletingUserId = userId;
+      lastFocusedElement = document.activeElement;
+      elements.deleteUserName.textContent = `Delete ${getFullName(user)}?`;
+      openModal(elements.deleteModal, '#confirm-delete-btn');
+    }
+
+    function closeDeleteModal() {
+      deletingUserId = null;
+      closeModal('delete-modal');
+    }
+
+    function confirmDelete() {
+      if (!deletingUserId) return;
+
+      const user = users.find(item => item.id === deletingUserId);
+      users = users.filter(item => item.id !== deletingUserId);
+      deletingUserId = null;
+
+      persistUsers();
+      closeDeleteModal();
+      applyFilters();
+      updateStats();
+
+      if (user) showToast('User deleted', `${getFullName(user)} was removed from the list.`);
+    }
+
+    function toggleStatus(userId) {
+      const user = users.find(item => item.id === userId);
+      if (!user) return;
+
+      user.status = user.status === 'active' ? 'inactive' : 'active';
+      persistUsers();
+      applyFilters();
+      updateStats();
+      showToast('Status updated', `${getFullName(user)} is now ${user.status}.`);
+    }
+
+    function openModal(modal, focusSelector) {
+      modal.style.display = 'flex';
+      modal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+
+      gsap.killTweensOf([modal, modal.querySelector('.modal')]);
+      gsap.fromTo(modal, { opacity: 0 }, { opacity: 1, duration: 0.18, ease: 'power2.out' });
+      gsap.fromTo(
+        modal.querySelector('.modal'),
+        { opacity: 0, scale: 0.94, y: 18 },
+        { opacity: 1, scale: 1, y: 0, duration: 0.32, ease: 'back.out(1.45)' }
+      );
+
+      setTimeout(() => {
+        const target = modal.querySelector(focusSelector) || modal.querySelector('button, input, select');
+        if (target) target.focus();
+      }, 80);
+    }
+
+    function closeModal(modalId) {
+      const modal = document.getElementById(modalId);
+      if (!modal || !isModalOpen(modal)) return;
+
+      const modalCard = modal.querySelector('.modal');
+
+      gsap.killTweensOf([modal, modalCard]);
+      gsap.to(modal, {
+        opacity: 0,
+        duration: 0.18,
+        ease: 'power2.out',
+        onComplete: () => {
+          modal.style.display = 'none';
+          modal.setAttribute('aria-hidden', 'true');
+
+          if (!isModalOpen(elements.userModal) && !isModalOpen(elements.deleteModal)) {
+            document.body.style.overflow = '';
+          }
+
+          if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+            lastFocusedElement.focus();
+          }
+        }
+      });
+
+      gsap.to(modalCard, {
+        opacity: 0,
+        scale: 0.94,
+        y: 12,
+        duration: 0.16,
+        ease: 'power2.out'
+      });
+    }
+
+    function isModalOpen(modal) {
+      return modal.style.display === 'flex';
+    }
+
+    function showToast(title, message = '', type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `
+        <div class="toast-icon">
+          ${type === 'error'
+            ? '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>'
+            : '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"></path></svg>'
+          }
+        </div>
+        <div>
+          <strong>${escapeHTML(title)}</strong>
+          ${message ? `<span>${escapeHTML(message)}</span>` : ''}
+        </div>
+      `;
+
+      elements.toastStack.appendChild(toast);
+
+      gsap.to(toast, {
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        duration: 0.34,
+        ease: 'back.out(1.5)'
+      });
+
+      setTimeout(() => {
+        gsap.to(toast, {
+          opacity: 0,
+          y: 12,
+          scale: 0.96,
+          duration: 0.25,
+          ease: 'power2.in',
+          onComplete: () => toast.remove()
+        });
+      }, 2700);
+    }
+
+    function animateRows() {
+      gsap.fromTo(
+        '.user-table tbody tr, .mobile-card',
+        { opacity: 0, y: 14 },
+        { opacity: 1, y: 0, stagger: 0.035, duration: 0.28, ease: 'power2.out' }
+      );
+    }
+
+    function runIntroAnimation() {
+      const timeline = gsap.timeline({ defaults: { ease: 'power2.out' } });
+
+      timeline
+        .to(elements.container, { opacity: 1, duration: 0.25 })
+        .fromTo('.hero', { opacity: 0, y: 24, scale: 0.985 }, { opacity: 1, y: 0, scale: 1, duration: 0.55 }, '-=0.05')
+        .fromTo('.eyebrow, .hero-title, .hero-copy', { opacity: 0, y: 18 }, { opacity: 1, y: 0, stagger: 0.08, duration: 0.48 }, '-=0.28')
+        .fromTo('.hero-panel', { opacity: 0, x: 24 }, { opacity: 1, x: 0, duration: 0.42 }, '-=0.35')
+        .fromTo('.toolbar', { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.4 }, '-=0.18')
+        .fromTo('.stat-card', { opacity: 0, y: 18 }, { opacity: 1, y: 0, stagger: 0.06, duration: 0.38 }, '-=0.2')
+        .fromTo('.table-card', { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.44 }, '-=0.18');
+    }
+
+    function formatDate(dateString) {
+      const date = new Date(`${dateString}T00:00:00`);
+
+      if (Number.isNaN(date.getTime())) return '—';
+
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    }
+
+    function getFullName(user) {
+      return `${user.firstName || ''} ${user.lastName || ''}`.trim();
+    }
+
+    function getInitials(user) {
+      const first = user.firstName?.[0] || '';
+      const last = user.lastName?.[0] || '';
+      return `${first}${last}`.toUpperCase() || 'U';
+    }
+
+    function getRoleLabel(role) {
+      const labels = {
+        admin: 'Admin',
+        manager: 'Manager',
+        member: 'Member',
+        viewer: 'Viewer'
+      };
+
+      return escapeHTML(labels[role] || role || 'Unknown');
+    }
+
+    function escapeHTML(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function debounce(callback, wait = 150) {
+      let timeoutId;
+
+      return (...args) => {
+        window.clearTimeout(timeoutId);
+        timeoutId = window.setTimeout(() => callback.apply(null, args), wait);
+      };
+    }
+
+    init();
+  </script>
+</body>
+</html>
