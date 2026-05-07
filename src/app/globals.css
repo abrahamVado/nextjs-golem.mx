@@ -73,6 +73,18 @@
       background-position: 350% 50%, 350% 50%;
     }
   }
+
+  @keyframes auth-panel-settle {
+    0% {
+      opacity: 0;
+      transform: translateY(48px) rotateY(-8deg) rotateX(4deg) rotateZ(1deg);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0) rotateY(0deg) rotateX(0deg) rotateZ(0deg);
+    }
+  }
 }
 
 :root {

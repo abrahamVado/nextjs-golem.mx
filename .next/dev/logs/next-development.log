@@ -1,5 +1,40 @@
-[00:00:01.708] Server  LOG     ✓ Ready in 1531ms
-[00:00:05.002] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:17:14.298] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:18:00.471] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:18:00.596] Browser LOG     [Loader] Initializing frontend modules...
+[00:00:01.524] Server  LOG     ✓ Ready in 1335ms
+[00:00:04.534] Server  LOG     ○ Compiling / ...
+[00:00:06.000] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:06.127] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:06.127] Browser WARN    GSAP no se ha cargado. Las animaciones no estarán disponibles.
+[00:00:06.142] Browser WARN    GSAP no se ha cargado. Las animaciones no estarán disponibles.
+[00:00:13.861] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:13.994] Browser WARN    GSAP no se ha cargado. Las animaciones no estarán disponibles.
+[00:00:16.263] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:16.384] Browser WARN    GSAP no se ha cargado. Las animaciones no estarán disponibles.
+[00:00:22.161] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:22.284] Browser WARN    GSAP no se ha cargado. Las animaciones no estarán disponibles.
+[00:00:22.738] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:22.797] Browser WARN    GSAP no se ha cargado. Las animaciones no estarán disponibles.
+[00:00:22.918] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:22.987] Browser WARN    GSAP no se ha cargado. Las animaciones no estarán disponibles.
+[00:00:23.115] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:23.173] Browser WARN    GSAP no se ha cargado. Las animaciones no estarán disponibles.
+[00:00:23.295] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:23.355] Browser WARN    GSAP no se ha cargado. Las animaciones no estarán disponibles.
+[00:00:23.477] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:23.546] Browser WARN    GSAP no se ha cargado. Las animaciones no estarán disponibles.
+[00:00:23.663] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:23.804] Browser WARN    GSAP no se ha cargado. Las animaciones no estarán disponibles.
+[00:18:05.254] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:18:05.412] Browser WARN    GSAP no se ha cargado. Las animaciones no estarán disponibles.
+[00:18:06.306] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:18:06.444] Browser WARN    GSAP no se ha cargado. Las animaciones no estarán disponibles.
+[00:18:07.075] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:18:07.219] Browser WARN    GSAP no se ha cargado. Las animaciones no estarán disponibles.
+[00:18:07.287] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:18:07.393] Browser WARN    GSAP no se ha cargado. Las animaciones no estarán disponibles.
+[00:18:07.505] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:18:07.649] Browser WARN    GSAP no se ha cargado. Las animaciones no estarán disponibles.
+[00:18:07.713] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:18:07.833] Browser WARN    GSAP no se ha cargado. Las animaciones no estarán disponibles.
+[00:18:07.939] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:18:08.016] Browser WARN    GSAP no se ha cargado. Las animaciones no estarán disponibles.
+[00:18:08.123] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:18:08.264] Browser WARN    GSAP no se ha cargado. Las animaciones no estarán disponibles.

@@ -88,19 +88,23 @@ export default function NotificationsPage() {
 
             {endpointUnavailable ? (
                 <DashboardSurface>
-                    <DashboardNotice
-                        title="Notifications are not enabled in this backend yet"
-                        description="The dashboard is ready for notifications, but the current API does not expose the route yet. Once the backend endpoint is added, items will appear here automatically."
-                    />
+                    <DashboardNotice tone="amber">
+                        <div className="space-y-1">
+                            <h3 className="font-semibold">Notifications are not enabled in this backend yet</h3>
+                            <p>The dashboard is ready for notifications, but the current API does not expose the route yet. Once the backend endpoint is added, items will appear here automatically.</p>
+                        </div>
+                    </DashboardNotice>
                 </DashboardSurface>
             ) : null}
 
             {errorMessage ? (
                 <DashboardSurface>
-                    <DashboardNotice
-                        title="We couldn't load notifications"
-                        description={errorMessage}
-                    />
+                    <DashboardNotice tone="red">
+                        <div className="space-y-1">
+                            <h3 className="font-semibold">We couldn&apos;t load notifications</h3>
+                            <p>{errorMessage}</p>
+                        </div>
+                    </DashboardNotice>
                 </DashboardSurface>
             ) : null}
 

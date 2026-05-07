@@ -7,7 +7,6 @@ import {
   Role,
   Permission,
   SessionPolicy,
-  SessionMetadata,
   TeamMember,
   Team,
   Notification,
@@ -288,8 +287,8 @@ export const taskApi = {
 };
 
 export const userApi = {
-  getMe: () => api.get<{ data: { user_id: string; company_id: string; branch_id?: string | null } }>('/me'),
-  updateMe: (data: { name: string }) => api.patch<{ data: { message: string } }>('/me', data),
+  getMe: () => api.get<{ data: { user_id: string; company_id: string; branch_id?: string | null; name?: string; email?: string; role?: string; avatar_url?: string } }>('/me'),
+  updateMe: (data: { name: string }) => api.patch<{ data: { user_id: string; company_id: string; branch_id?: string | null; name?: string; email?: string; role?: string; avatar_url?: string } }>('/me', data),
   listUsers: () => api.get<{ data: { company_id: string; module: string; items: unknown[] } }>('/users'),
   uploadAvatar: (file: File) => {
     const form = new FormData();
@@ -297,6 +296,24 @@ export const userApi = {
     return api.post<{ data: User }>('/users/me/avatar', form, { headers: { 'Content-Type': 'multipart/form-data' } });
   },
   changePassword: (data: { old_password: string; new_password: string }) => api.put('/users/me/password', data),
+};
+
+export const dashboardApi = {
+  getSummary: () =>
+    api.get<{
+      data: {
+        company_id: string;
+        generated_at: string;
+        project_count: number;
+        task_count: number;
+        team_member_count: number;
+        completed_task_count: number;
+        completion_rate: number;
+        task_status: { key: string; label: string; count: number }[];
+        project_activity: { name: string; tasks: number }[];
+        recent_projects: { id: string; name: string; description?: string; icon?: string; created_at?: string; task_count: number }[];
+      };
+    }>('/dashboard/summary'),
 };
 
 export const notificationApi = {

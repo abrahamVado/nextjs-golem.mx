@@ -1,9 +1,11 @@
 ﻿import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import { useUI } from "@/components/providers/ui-provider";
 import { useLanguage } from "@/components/providers/language-provider";
+import { isClientRole } from "@/lib/access";
 import {
     LayoutDashboard,
     Settings,
@@ -27,9 +29,11 @@ import { Button } from "../ui/Button";
 
 export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
     const pathname = usePathname();
+    const { user } = useAuth();
     const { settings, updateSettings } = useUI();
     const { __ } = useLanguage();
     const [expandedItem, setExpandedItem] = useState<string | null>(null);
+    const clientOnly = isClientRole(user);
 
     const toggleSidebar = () => {
         updateSettings({ sidebarCollapsed: !settings.sidebarCollapsed });
@@ -49,10 +53,12 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
     const navItems: NavItem[] = [
         { label: __("common.dashboard"), href: "/dashboard", icon: LayoutDashboard },
         { label: __("nav.tickets") || "Tickets", href: "/dashboard/tickets", icon: Ticket },
-        { label: "Kanban", href: "/dashboard/kanban", icon: Columns3 },
         { label: "Projects", href: "/dashboard/projects", icon: FolderKanban },
         { label: "Teams", href: "/dashboard/teams", icon: UsersRound },
-        {
+        ...(!clientOnly ? [{
+            label: "Kanban", href: "/dashboard/kanban", icon: Columns3
+        }] : []),
+        ...(!clientOnly ? [{
             label: __("nav.access_control"),
             href: "/dashboard/access",
             icon: ShieldAlert,
@@ -60,8 +66,8 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
                 { label: "Users", href: "/dashboard/access/users", icon: Users },
                 { label: "Roles", href: "/dashboard/access/roles", icon: ShieldAlert },
             ]
-        },
-        {
+        }] : []),
+        ...(!clientOnly ? [{
             label: "API Security",
             href: "/dashboard/api",
             icon: KeyRound,
@@ -70,9 +76,9 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
                 { label: "Orchestration", href: "/dashboard/api/orchestration", icon: Binary },
                 { label: "API Docs", href: "/dashboard/api/docs", icon: FileText },
             ]
-        },
-        { label: __("common.notifications"), href: "/dashboard/notifications", icon: Bell },
-        { label: __("nav.webhooks"), href: "/dashboard/webhooks", icon: Webhook },
+        }] : []),
+        ...(!clientOnly ? [{ label: __("common.notifications"), href: "/dashboard/notifications", icon: Bell }] : []),
+        ...(!clientOnly ? [{ label: __("nav.webhooks"), href: "/dashboard/webhooks", icon: Webhook }] : []),
         { label: __("common.settings"), href: "/dashboard/settings", icon: Settings },
     ];
 

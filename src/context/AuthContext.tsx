@@ -25,6 +25,16 @@ interface User {
     updated_at?: string;
 }
 
+type MeResponse = {
+    user_id: string;
+    company_id: string;
+    branch_id?: string | null;
+    name?: string;
+    email?: string;
+    role?: string;
+    avatar_url?: string;
+};
+
 interface LoginCredentials {
     email: string;
     password: string;
@@ -87,14 +97,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const checkAuth = useCallback(async () => {
         try {
             const userRes = await api.get("/me");
-            const payload = userRes.data.data as { user_id: string; company_id: string; branch_id?: string | null };
+            const payload = userRes.data.data as MeResponse;
             setUser({
                 id: payload.user_id,
                 company_id: payload.company_id,
                 branch_id: payload.branch_id,
-                email: "",
-                name: payload.user_id,
-                avatar_url: resolveAssetURL(undefined),
+                email: payload.email || "",
+                name: payload.name || payload.user_id,
+                role: payload.role,
+                avatar_url: resolveAssetURL(payload.avatar_url),
             });
             await refreshSession();
         } catch {

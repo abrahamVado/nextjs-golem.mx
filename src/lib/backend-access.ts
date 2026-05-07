@@ -67,6 +67,10 @@ export async function updateBackendRole(roleId: string, payload: {
     return api.patch<{ data: Record<string, unknown> }>(`/roles/${roleId}`, payload);
 }
 
+export async function deleteBackendRole(roleId: string) {
+    return api.delete<{ data: Record<string, unknown> }>(`/roles/${roleId}`);
+}
+
 export async function getBackendPermissions() {
     return api.get<{ data: BackendListEnvelope }>("/permissions");
 }

@@ -1,7 +1,102 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
+import { ensureGSAP } from '@/lib/gsap';
+
+export function useDashboardMotion(dependencyKey = '') {
+    const rootRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        if (!rootRef.current) return;
+
+        const gsap = ensureGSAP();
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (reduceMotion) return;
+
+        const ctx = gsap.context(() => {
+            const hero = rootRef.current?.querySelector('[data-dashboard-hero]');
+            const statTargets = gsap.utils.toArray<HTMLElement>('[data-dashboard-stat]');
+            const glowTargets = gsap.utils.toArray<HTMLElement>('[data-dashboard-glow]');
+
+            if (hero) {
+                gsap.fromTo(hero, {
+                    opacity: 0,
+                    y: 30,
+                    scale: 0.985,
+                }, {
+                    opacity: 1,
+                    y: 0,
+                    scale: 1,
+                    duration: 0.9,
+                    ease: 'power3.out',
+                    clearProps: 'opacity,transform',
+                });
+
+                gsap.fromTo('[data-dashboard-hero-copy] > *', {
+                    opacity: 0,
+                    y: 20,
+                }, {
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.7,
+                    stagger: 0.08,
+                    ease: 'power2.out',
+                    delay: 0.1,
+                    clearProps: 'opacity,transform',
+                });
+            }
+
+            if (glowTargets.length > 0) {
+                gsap.fromTo(glowTargets, {
+                    opacity: 0,
+                    scale: 0.88,
+                }, {
+                    opacity: 1,
+                    scale: 1,
+                    duration: 1,
+                    stagger: 0.12,
+                    ease: 'power2.out',
+                });
+
+                glowTargets.forEach((target, index) => {
+                    gsap.to(target, {
+                        y: index % 2 === 0 ? 16 : -12,
+                        x: index % 2 === 0 ? -10 : 8,
+                        duration: 5 + index,
+                        repeat: -1,
+                        yoyo: true,
+                        ease: 'sine.inOut',
+                    });
+                });
+            }
+
+            if (statTargets.length > 0) {
+                gsap.fromTo(statTargets, {
+                    opacity: 0,
+                    y: 26,
+                }, {
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.68,
+                    stagger: 0.08,
+                    ease: 'power3.out',
+                    clearProps: 'opacity,transform',
+                    scrollTrigger: {
+                        trigger: statTargets[0],
+                        start: 'top 88%',
+                        once: true,
+                    },
+                });
+            }
+
+        }, rootRef);
+
+        return () => ctx.revert();
+    }, [dependencyKey]);
+
+    return rootRef;
+}
 
 export function DashboardCanvas({
     children,
@@ -12,6 +107,7 @@ export function DashboardCanvas({
 }) {
     return (
         <div
+            data-dashboard-canvas
             className={cn(
                 'relative min-h-screen overflow-hidden rounded-[32px] bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.18),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(37,99,235,0.12),_transparent_28%),linear-gradient(135deg,#eef5f3_0%,#f8fbfa_46%,#eef7ff_100%)] p-4 md:p-8',
                 className
@@ -37,25 +133,48 @@ export function DashboardHero({
     title,
     description,
     right,
+    size = 'default',
     className,
 }: {
     eyebrow: ReactNode;
     title: ReactNode;
     description: ReactNode;
     right?: ReactNode;
+    size?: 'default' | 'compact';
     className?: string;
 }) {
+    const compact = size === 'compact';
+
     return (
-        <section className={cn('relative overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/75 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.10)] backdrop-blur-xl', className)}>
-            <div className="pointer-events-none absolute -right-16 -top-20 h-72 w-72 rounded-full bg-emerald-200/40" />
-            <div className="pointer-events-none absolute bottom-[-100px] right-32 h-52 w-52 rounded-full bg-blue-200/40" />
-            <div className="relative z-10 grid gap-6 lg:grid-cols-2 lg:items-start">
-                <div className="max-w-3xl">
-                    <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/70 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.18em] text-emerald-700">
+        <section data-dashboard-hero className={cn(
+            'relative overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/75 shadow-[0_20px_60px_rgba(15,23,42,0.10)] backdrop-blur-xl',
+            compact ? 'p-3 md:p-4' : 'p-4 md:p-5',
+            className
+        )}>
+            <div data-dashboard-glow className={cn(
+                'pointer-events-none absolute rounded-full bg-emerald-200/40',
+                compact ? '-right-8 -top-10 h-24 w-24' : '-right-10 -top-14 h-40 w-40'
+            )} />
+            <div data-dashboard-glow className={cn(
+                'pointer-events-none absolute rounded-full bg-blue-200/40',
+                compact ? 'bottom-[-32px] right-12 h-16 w-16' : 'bottom-[-56px] right-20 h-28 w-28'
+            )} />
+            <div className={cn('relative z-10 grid lg:grid-cols-2 lg:items-start', compact ? 'gap-3' : 'gap-4')}>
+                <div data-dashboard-hero-copy className="max-w-3xl">
+                    <div className={cn(
+                        'inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/70 px-3 py-1 font-extrabold uppercase tracking-[0.18em] text-emerald-700',
+                        compact ? 'mb-2 text-[9px]' : 'mb-3 text-[10px]'
+                    )}>
                         {eyebrow}
                     </div>
-                    <h1 className="max-w-4xl text-4xl font-semibold tracking-[-0.08em] text-slate-950 md:text-6xl">{title}</h1>
-                    <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600 md:text-base">{description}</p>
+                    <h1 className={cn(
+                        'max-w-4xl font-semibold tracking-[-0.08em] text-slate-950',
+                        compact ? 'text-xl md:text-2xl' : 'text-2xl md:text-4xl'
+                    )}>{title}</h1>
+                    <p className={cn(
+                        'max-w-2xl text-slate-600',
+                        compact ? 'mt-2 text-xs leading-5 md:text-sm' : 'mt-3 text-sm leading-6'
+                    )}>{description}</p>
                 </div>
                 {right ? right : null}
             </div>
@@ -123,7 +242,7 @@ export function DashboardStatCard({
     hint: ReactNode;
 }) {
     return (
-        <div className="rounded-[20px] border border-slate-200 bg-white/85 p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
+        <div data-dashboard-stat className="rounded-[20px] border border-slate-200 bg-white/85 p-5 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
             <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">{label}</div>
             <div className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-slate-950">{value}</div>
             <p className="mt-2 text-sm font-semibold text-slate-500">{hint}</p>

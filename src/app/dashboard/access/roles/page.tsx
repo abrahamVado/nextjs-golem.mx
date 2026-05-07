@@ -1,8 +1,8 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Minus, Plus, ShieldPlus, Trash2, X } from 'lucide-react';
-import { createBackendPermission, createBackendRole, getBackendPermissions, getBackendRolePermissions, getBackendRoles, updateBackendRole } from '@/lib/backend-access';
+import { Minus, Pencil, Plus, ShieldPlus, Trash2, X } from 'lucide-react';
+import { createBackendPermission, createBackendRole, deleteBackendRole, getBackendPermissions, getBackendRolePermissions, getBackendRoles, updateBackendRole } from '@/lib/backend-access';
 import { DashboardBadge, DashboardCanvas, DashboardContent, DashboardModalFrame, DashboardNotice, DashboardStatCard, DashboardSurface } from '@/components/layout/dashboard-visuals';
 import { getErrorMessage } from '@/lib/errors';
 import { Button } from '@/components/ui/Button';
@@ -203,7 +203,7 @@ export default function RolesPage() {
     const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
     const [savingRole, setSavingRole] = useState(false);
     const [savingPermission, setSavingPermission] = useState(false);
-    const [roleForm, setRoleForm] = useState({ name: '', color: ROLE_COLORS[0] });
+    const [roleForm, setRoleForm] = useState({ id: '', name: '', color: ROLE_COLORS[0], mode: 'create' as 'create' | 'edit' });
     const [permissionName, setPermissionName] = useState('');
     const [collapsedModules, setCollapsedModules] = useState<Record<string, boolean>>({});
 
@@ -344,11 +344,39 @@ export default function RolesPage() {
         }
     };
 
-    const removeRole = (index: number) => {
+    const removeRole = async (index: number) => {
         const target = roles[index];
         if (!target) return;
-        setRoles((current) => current.filter((_, currentIndex) => currentIndex !== index));
-        setToast(`Role "${target.name}" removed from this view`);
+
+        if (!window.confirm(`Delete role "${target.name}"?`)) return;
+
+        setUpdatingRoleId(target.id);
+        setError(null);
+        try {
+            await deleteBackendRole(target.id);
+            setRoles((current) => current.filter((_, currentIndex) => currentIndex !== index));
+            setRolesInfo((current) => current ? { ...current, items: current.items.filter((item) => String(item.id) !== target.id) } : current);
+            setToast(`Role "${target.name}" deleted`);
+        } catch (err: unknown) {
+            setError(getErrorMessage(err, `Failed to delete ${target.name}.`));
+        } finally {
+            setUpdatingRoleId(null);
+        }
+    };
+
+    const openEditRoleModal = (role: MatrixRole) => {
+        setRoleForm({
+            id: role.id,
+            name: role.name,
+            color: role.color,
+            mode: 'edit',
+        });
+        setShowRoleModal(true);
+    };
+
+    const openCreateRoleModal = () => {
+        setRoleForm({ id: '', name: '', color: ROLE_COLORS[0], mode: 'create' });
+        setShowRoleModal(true);
     };
 
     const addPermission = () => {
@@ -434,7 +462,7 @@ export default function RolesPage() {
         setToast(`"${permissionLabel}" removed`);
     };
 
-    const handleCreateRole = async (event: FormEvent<HTMLFormElement>) => {
+    const handleSaveRole = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         const trimmedName = roleForm.name.trim();
 
@@ -445,27 +473,59 @@ export default function RolesPage() {
 
         setSavingRole(true);
         try {
-            const response = await createBackendRole({ name: trimmedName });
-            const createdRole = response.data.data;
+            if (roleForm.mode === 'edit' && roleForm.id) {
+                const response = await updateBackendRole(roleForm.id, { name: trimmedName });
+                const updatedRole = response.data.data;
 
-            const newRole: MatrixRole = {
-                id: String(createdRole.id ?? `${slugify(trimmedName) || 'role'}-${Date.now()}`),
-                name: String(createdRole.name ?? trimmedName),
-                color: roleForm.color,
-                dotClass: 'bg-cyan-500',
-                persisted: true,
-                sourceStatus: String(createdRole.status ?? 'active'),
-                permissionIds: [],
-                perms: Object.fromEntries(modules.map((module) => [module.id, Array(module.permissions.length).fill(0)])),
-                raw: typeof createdRole === 'object' && createdRole ? { ...createdRole, color: roleForm.color } : { name: trimmedName, color: roleForm.color },
-            };
+                setRoles((current) =>
+                    current.map((role) =>
+                        role.id === roleForm.id
+                            ? {
+                                  ...role,
+                                  name: String(updatedRole.name ?? trimmedName),
+                                  color: roleForm.color,
+                                  raw: typeof updatedRole === 'object' && updatedRole ? { ...updatedRole, color: roleForm.color } : { ...role.raw, name: trimmedName, color: roleForm.color },
+                                  dotClass: pickRoleDotClass(trimmedName),
+                              }
+                            : role
+                    )
+                );
+                setRolesInfo((current) =>
+                    current
+                        ? {
+                              ...current,
+                              items: current.items.map((item) =>
+                                  String(item.id) === roleForm.id ? { ...item, name: trimmedName, color: roleForm.color } : item
+                              ),
+                          }
+                        : current
+                );
+                setToast(`Role "${trimmedName}" updated`);
+            } else {
+                const response = await createBackendRole({ name: trimmedName });
+                const createdRole = response.data.data;
 
-            setRoles((current) => [...current, newRole]);
-            setRoleForm({ name: '', color: ROLE_COLORS[0] });
+                const newRole: MatrixRole = {
+                    id: String(createdRole.id ?? `${slugify(trimmedName) || 'role'}-${Date.now()}`),
+                    name: String(createdRole.name ?? trimmedName),
+                    color: roleForm.color,
+                    dotClass: pickRoleDotClass(trimmedName),
+                    persisted: true,
+                    sourceStatus: String(createdRole.status ?? 'active'),
+                    permissionIds: [],
+                    perms: Object.fromEntries(modules.map((module) => [module.id, Array(module.permissions.length).fill(0)])),
+                    raw: typeof createdRole === 'object' && createdRole ? { ...createdRole, color: roleForm.color } : { name: trimmedName, color: roleForm.color },
+                };
+
+                setRoles((current) => [...current, newRole]);
+                setRolesInfo((current) => current ? { ...current, items: [...current.items, newRole.raw] } : current);
+                setToast(`Role "${trimmedName}" added`);
+            }
+
+            setRoleForm({ id: '', name: '', color: ROLE_COLORS[0], mode: 'create' });
             setShowRoleModal(false);
-            setToast(`Role "${trimmedName}" added`);
         } catch (err: unknown) {
-            setError(getErrorMessage(err, 'Failed to create role.'));
+            setError(getErrorMessage(err, roleForm.mode === 'edit' ? 'Failed to update role.' : 'Failed to create role.'));
         } finally {
             setSavingRole(false);
         }
@@ -495,7 +555,7 @@ export default function RolesPage() {
                         </div>
                         <Button
                             className="rounded-xl bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-                            onClick={() => setShowRoleModal(true)}
+                            onClick={openCreateRoleModal}
                         >
                             <ShieldPlus className="h-4 w-4" />
                             Add Role
@@ -605,13 +665,23 @@ export default function RolesPage() {
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                        <button
-                                                            type="button"
-                                                            className="rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-600 opacity-0 transition group-hover:opacity-100 hover:bg-red-100"
-                                                            onClick={() => removeRole(roleIndex)}
-                                                        >
-                                                            <Trash2 className="h-3.5 w-3.5" />
-                                                        </button>
+                                                        <div className="flex items-center gap-2 opacity-0 transition group-hover:opacity-100">
+                                                            <button
+                                                                type="button"
+                                                                className="rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200"
+                                                                onClick={() => openEditRoleModal(role)}
+                                                            >
+                                                                <Pencil className="h-3.5 w-3.5" />
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                className="rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-100 disabled:opacity-60"
+                                                                onClick={() => void removeRole(roleIndex)}
+                                                                disabled={updatingRoleId === role.id}
+                                                            >
+                                                                <Trash2 className="h-3.5 w-3.5" />
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 {module.permissions.map((_, permIndex) => {
@@ -669,11 +739,11 @@ export default function RolesPage() {
                 <DashboardModalFrame width="max-w-md">
                     <div className="w-full rounded-[20px] bg-white p-6">
                         <div className="mb-6">
-                            <h2 className="text-xl font-semibold text-slate-950">Add New Role</h2>
-                            <p className="mt-1 text-sm text-slate-500">Create a new role and add it to this matrix view.</p>
+                            <h2 className="text-xl font-semibold text-slate-950">{roleForm.mode === 'edit' ? 'Edit Role' : 'Add New Role'}</h2>
+                            <p className="mt-1 text-sm text-slate-500">{roleForm.mode === 'edit' ? 'Update the role name shown in this matrix.' : 'Create a new role and add it to this matrix view.'}</p>
                         </div>
 
-                        <form onSubmit={handleCreateRole} className="space-y-5">
+                        <form onSubmit={handleSaveRole} className="space-y-5">
                             <div>
                                 <label className="mb-2 block text-sm font-semibold text-slate-800">Role Name</label>
                                 <input
@@ -711,7 +781,7 @@ export default function RolesPage() {
                                     Cancel
                                 </Button>
                                 <Button type="submit" isLoading={savingRole} className="bg-emerald-600 text-white hover:bg-emerald-700">
-                                    Add Role
+                                    {roleForm.mode === 'edit' ? 'Save Role' : 'Add Role'}
                                 </Button>
                             </div>
                         </form>

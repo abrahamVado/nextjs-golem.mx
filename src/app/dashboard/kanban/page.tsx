@@ -986,58 +986,14 @@ export default function KanbanPage({ initialProjectId = null }: { initialProject
             <DashboardCanvas className="kanban-page">
                 <DashboardContent className="max-w-none">
                     <DashboardHero
+                        size="compact"
+                        className="p-3 md:p-4"
                         eyebrow={<><span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_6px_rgba(16,185,129,0.16)]" />Kanban</>}
                         title={selectedProject?.name || "Delivery board with a calmer control-room feel"}
                         description={selectedProject?.description || "Manage stages, priorities, and execution in a cleaner board layout that matches the rest of the dashboard without extra motion noise."}
-                        right={
-                            <DashboardSurface className="border-slate-200/80 bg-white/75 p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
-                                <div className="grid gap-3">
-                                    <div className="grid gap-3 lg:grid-cols-[1.1fr_0.9fr]">
-                                        <div className="rounded-[22px] border border-red-100 bg-[linear-gradient(135deg,rgba(254,242,242,0.96),rgba(255,255,255,0.92))] p-5 shadow-[0_10px_24px_rgba(239,68,68,0.08)]">
-                                            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-red-700">At Risk</div>
-                                            <div className="mt-3 text-4xl font-semibold tracking-[-0.06em] text-slate-950">{atRiskCount}</div>
-                                            <p className="mt-2 text-sm text-slate-600">{atRiskSummary}</p>
-                                            <div className="mt-4 flex flex-wrap gap-2">
-                                                <DashboardBadge tone="red" className="py-1">{overdueTasks.length} overdue</DashboardBadge>
-                                                <DashboardBadge tone="amber" className="py-1">{unassignedUrgentTasks.length} uncovered urgent</DashboardBadge>
-                                            </div>
-                                        </div>
-                                        <div className="grid gap-3">
-                                            <div className="rounded-[20px] border border-blue-100 bg-blue-50/80 p-4">
-                                                <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-700">Focus Today</div>
-                                                <div className="mt-2 text-3xl font-semibold tracking-[-0.05em] text-slate-950">{focusTodayCount}</div>
-                                                <p className="mt-1 text-sm text-slate-500">{focusTodaySummary}</p>
-                                            </div>
-                                            <div className="rounded-[20px] border border-amber-100 bg-amber-50/80 p-4">
-                                                <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-700">Flow Pressure</div>
-                                                <div className="mt-2 text-3xl font-semibold tracking-[-0.05em] text-slate-950">{flowPressureCount}</div>
-                                                <p className="mt-1 text-sm text-slate-500">{flowPressureSummary}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="grid gap-3 sm:grid-cols-3">
-                                        <div className="rounded-[18px] border border-slate-200 bg-white/88 p-4">
-                                            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Ownership</div>
-                                            <div className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-slate-950">{ownerGapTasks.length}</div>
-                                            <p className="mt-1 text-xs leading-5 text-slate-500">{ownerGapTasks.length > 0 ? `${ownerGapTasks.length} tasks missing owner` : "Owner coverage is complete"}</p>
-                                        </div>
-                                        <div className="rounded-[18px] border border-slate-200 bg-white/88 p-4">
-                                            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Assigned To Me</div>
-                                            <div className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-slate-950">{myTasks}</div>
-                                            <p className="mt-1 text-xs leading-5 text-slate-500">{myTasksSummary}</p>
-                                        </div>
-                                        <div className="rounded-[18px] border border-slate-200 bg-white/88 p-4">
-                                            <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">No Due Date</div>
-                                            <div className="mt-2 text-2xl font-semibold tracking-[-0.05em] text-slate-950">{noDueDateTasks.length}</div>
-                                            <p className="mt-1 text-xs leading-5 text-slate-500">{noDueDateSummary}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </DashboardSurface>
-                        }
                     />
 
-                    <DashboardSurface className="space-y-4">
+                    <div className="space-y-4 rounded-[24px] border border-slate-200 bg-white/65 p-5 shadow-none">
                         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
                             <div className="grid gap-4 md:grid-cols-[minmax(260px,320px)_auto]">
                                 <div>
@@ -1119,10 +1075,10 @@ export default function KanbanPage({ initialProjectId = null }: { initialProject
                                 <DashboardBadge tone="slate">{noDueDateTasks.length} without due date</DashboardBadge>
                             </div>
                         </div>
-                    </DashboardSurface>
+                    </div>
 
                     {noProject ? (
-                        <DashboardSurface>
+                        <div className="rounded-[24px] border border-slate-200 bg-white/65 p-5 shadow-none">
                             <DashboardEmpty
                                 title="Select or create a project"
                                 description="A project is required before the board can load stages and tasks."
@@ -1133,11 +1089,11 @@ export default function KanbanPage({ initialProjectId = null }: { initialProject
                                     </Button>
                                 }
                             />
-                        </DashboardSurface>
+                        </div>
                     ) : loading ? (
-                        <DashboardSurface className="p-8 text-sm text-slate-600">Loading board...</DashboardSurface>
+                        <div className="rounded-[24px] border border-slate-200 bg-white/65 p-8 text-sm text-slate-600 shadow-none">Loading board...</div>
                     ) : error ? (
-                        <DashboardSurface>
+                        <div className="rounded-[24px] border border-slate-200 bg-white/65 p-5 shadow-none">
                             <DashboardNotice tone="red">
                                 <div className="flex items-start gap-3">
                                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -1147,7 +1103,7 @@ export default function KanbanPage({ initialProjectId = null }: { initialProject
                                     </div>
                                 </div>
                             </DashboardNotice>
-                        </DashboardSurface>
+                        </div>
                     ) : (
                     <DndContext
                         sensors={sensors}

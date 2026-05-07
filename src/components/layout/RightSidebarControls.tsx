@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useUI } from "@/components/providers/ui-provider";
 import { useLanguage } from "@/components/providers/language-provider";
 import { resolveAssetURL } from "@/lib/assets";
+import { isClientRole } from "@/lib/access";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,7 @@ export default function RightSidebarControls({
     const router = useRouter();
     const isDark = settings.themeMode === "dark";
     const isBoxed = settings.layoutMode === "boxed";
+    const clientOnly = isClientRole(user);
 
     const displayName = user?.name || user?.full_name || user?.email || "User";
     const avatarSrc = resolveAssetURL(user?.avatar_url);
@@ -74,7 +76,7 @@ export default function RightSidebarControls({
                             {__("common.logout")}
                         </div>
                     </div>
-                    <div className="relative group mb-2">
+                    {!clientOnly && <div className="relative group mb-2">
                         <Link
                             href="/dashboard/notifications"
                             aria-label={__("common.notifications")}
@@ -86,7 +88,7 @@ export default function RightSidebarControls({
                         <div className="absolute right-full top-1/2 z-50 mr-[13px] hidden w-auto min-w-max -translate-y-1/2 rounded-md border bg-popover p-2 shadow-md group-hover:block whitespace-nowrap bg-white dark:bg-gray-800 before:absolute before:-right-2 before:top-0 before:h-full before:w-2 before:content-['']">
                             {__("common.notifications")}
                         </div>
-                    </div>
+                    </div>}
                     <div className="relative group">
                         <button
                             type="button"
@@ -190,11 +192,11 @@ export default function RightSidebarControls({
                                 {isDark ? __("theme.light") : __("theme.dark")}
                             </Button>
                         </div>
-                        <div className="flex items-center gap-2 rounded-md border border-border p-3">
+                        {!clientOnly && <div className="flex items-center gap-2 rounded-md border border-border p-3">
                             <Bell className="h-4 w-4 text-muted-foreground" />
                             <span className="text-sm text-foreground">{__("common.notifications")}</span>
                             <span className="ml-auto h-2 w-2 rounded-full bg-red-500" />
-                        </div>
+                        </div>}
                     </div>
 
                     <div className="space-y-2">
