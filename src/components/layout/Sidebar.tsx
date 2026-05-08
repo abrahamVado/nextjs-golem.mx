@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
@@ -248,7 +248,6 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
                     {!settings.sidebarCollapsed ? (
                         <div className="rounded-lg bg-card/50 p-3 text-xs text-muted-foreground backdrop-blur-sm">
                             <p>{__("common.version")}</p>
-                            <p className="mt-1 opacity-70">{__("common.jutsus")}</p>
                         </div>
                     ) : (
                         <div className="text-xs text-muted-foreground font-bold">v1.0</div>
@@ -258,4 +257,5 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
         </>
     );
 }
+
 

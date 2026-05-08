@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kanban Analytics</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #0b0f19;
+            --card: #151b2b;
+            --text: #e2e8f0;
+            --text-muted: #64748b;
+            --border: #2d3748;
+            --radius: 10px;
+            --transition: all 0.25s ease;
+            --term-bg: #0a0a0a;
+            --term-header: #1a1a1a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            padding: 24px;
+        }
+
+        .dashboard {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        .header {
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+        .header span { color: var(--text-muted); font-size: 13px; }
+
+        .add-widget-btn {
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 16px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .add-widget-btn:hover {
+            border-color: #475569;
+            background: #1e293b;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-auto-rows: 320px;
+            gap: 20px;
+        }
+
+        .widget {
+            background: var(--term-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .widget:hover {
+            border-color: #475569;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .window-header {
+            background: var(--term-header);
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 6px;
+        }
+
+        .win-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            color: rgba(0,0,0,0.6);
+            opacity: 0.8;
+        }
+
+        .win-btn:hover { opacity: 1; transform: scale(1.1); }
+        .win-btn.close { background: #ef4444; }
+        .win-btn.minimize { background: #f59e0b; }
+        .win-btn.maximize { background: #22c55e; }
+
+        .window-title {
+            margin-left: 8px;
+            font-size: 11px;
+            color: var(--text-muted);
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .widget-content {
+            flex: 1;
+            position: relative;
+            min-height: 0;
+            padding: 8px 16px 16px;
+            overflow: hidden;
+        }
+
+        .term-body {
+            padding: 12px;
+            overflow-y: auto;
+            font-size: 11px;
+            line-height: 1.6;
+            flex: 1;
+        }
+
+        .term-line { margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .term-line.t { color: #64748b; }
+        .term-line.i { color: #3b82f6; }
+        .term-line.s { color: #22c55e; }
+        .term-line.w { color: #f59e0b; }
+        .term-line.e { color: #ef4444; }
+        .term-line.sys { color: #8b5cf6; }
+
+        .aging-visual {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            height: 100%;
+            padding: 10px 0;
+            gap: 12px;
+        }
+
+        .aging-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .aging-val { font-size: 16px; font-weight: 700; }
+
+        .aging-bar {
+            width: 100%;
+            max-width: 40px;
+            border-radius: 4px;
+            min-height: 15px;
+        }
+
+        .aging-label { font-size: 10px; color: var(--text-muted); }
+
+        .heatmap-container {
+            padding: 10px 16px 16px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .heatmap {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            flex: 1;
+            align-content: center;
+        }
+
+        .heat-cell {
+            aspect-ratio: 1;
+            border-radius: 4px;
+            transition: var(--transition);
+        }
+
+        .heat-cell:hover { transform: scale(1.1); }
+
+        .legend {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 9px;
+            color: var(--text-muted);
+        }
+
+        .legend-box { width: 10px; height: 10px; border-radius: 2px; }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal-window {
+            background: var(--term-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            width: 90%;
+            max-width: 900px;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: modalIn 0.2s ease;
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-header {
+            background: var(--term-header);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .modal-title {
+            margin-left: 8px;
+            font-size: 13px;
+            color: var(--text);
+            flex: 1;
+        }
+
+        .modal-body {
+            flex: 1;
+            padding: 24px;
+            overflow: auto;
+        }
+
+        .modal-chart-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Widget Selector Modal */
+        .widget-selector {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding: 16px;
+        }
+
+        .widget-option {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .widget-option:hover {
+            border-color: #475569;
+            background: #1e293b;
+        }
+
+        .widget-option-title {
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .widget-option-desc {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .widget-option.added {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Span selector controls */
+        .span-controls {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+        }
+
+        .span-control {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .span-control label {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .span-control select {
+            background: var(--term-bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .span-control select:focus {
+            outline: none;
+            border-color: #475569;
+        }
+
+        .add-btn {
+            background: #22c55e;
+            color: #000;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+            margin-top: 8px;
+        }
+
+        .add-btn:hover {
+            background: #4ade80;
+        }
+
+        .add-btn:disabled {
+            background: #1e293b;
+            color: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 1000px) { 
+            .grid { grid-template-columns: repeat(2, 1fr); } 
+            .widget-selector { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 650px) { 
+            .grid { grid-template-columns: 1fr; } 
+            .modal-window { width: 95%; height: 90vh; }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="header">
+            <h1>root@kanban-flow:~#</h1>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <span>uptime: 14 days</span>
+                <button class="add-widget-btn" onclick="openWidgetSelector()">
+                    <span>+</span> Add Widget
+                </button>
+            </div>
+        </div>
+
+        <div class="grid" id="widgetGrid"></div>
+    </div>
+
+    <!-- Maximize Modal -->
+    <div class="modal-overlay" id="maximizeModal">
+        <div class="modal-window">
+            <div class="modal-header">
+                <div class="window-controls">
+                    <button class="win-btn close" onclick="closeMaximizeModal()">x</button>
+                </div>
+                <span class="modal-title" id="modalTitle">Widget</span>
+            </div>
+            <div class="modal-body">
+                <div class="modal-chart-container">
+                    <canvas id="modalChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Widget Selector Modal -->
+    <div class="modal-overlay" id="selectorModal">
+        <div class="modal-window" style="max-width: 600px; height: auto; max-height: 80vh;">
+            <div class="modal-header">
+                <div class="window-controls">
+                    <button class="win-btn close" onclick="closeSelectorModal()">x</button>
+                </div>
+                <span class="modal-title">Add Widget -- Select Component</span>
+            </div>
+            <div class="widget-selector" id="widgetSelector"></div>
+        </div>
+    </div>
+
+    <script>
+        const widgetDefinitions = {
+            cumulativeFlow: {
+                title: 'CUMULATIVE FLOW',
+                desc: 'Work item progression across states',
+                type: 'chart',
+                chartType: 'line',
+                chartConfig: {
+                    labels: ['M','T','W','T','F','S','S'],
+                    datasets: [
+                        { data: [12,19,25,32,38,42,47], borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', fill: true, tension: 0.4, pointRadius: 0 },
+                        { data: [20,31,40,46,54,55,58], borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.4, pointRadius: 0 },
+                        { data: [45,53,58,61,66,65,66], borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,0.05)', fill: true, tension: 0.4, pointRadius: 0 }
+                    ]
+                },
+                options: {
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    scales: { x: { display: false }, y: { display: false } }
+                }
+            },
+            cycleTime: {
+                title: 'CYCLE TIME',
+                desc: 'Avg duration per workflow stage',
+                type: 'chart',
+                chartType: 'bar',
+                chartConfig: {
+                    labels: ['Back','Ready','Dev','Rev','Done'],
+                    datasets: [{ data: [2.1,1.5,3.8,2.3,0.5], backgroundColor: ['#3b82f6','#8b5cf6','#f59e0b','#ef4444','#22c55e'], borderRadius: 3, barThickness: 18 }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    scales: { x: { grid: { display: false }, max: 5 }, y: { grid: { display: false }, ticks: { font: { size: 9 } } } }
+                }
+            },
+            throughput: {
+                title: 'THROUGHPUT',
+                desc: 'Tasks completed per time period',
+                type: 'chart',
+                chartType: 'line',
+                chartConfig: {
+                    labels: ['W1','W2','W3','W4','W5','W6'],
+                    datasets: [{ data: [18,22,19,25,23,28], borderColor: '#6366f1', backgroundColor: 'rgba(99,102,241,0.15)', fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#151b2b' }]
+                },
+                options: {
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    scales: { x: { grid: { display: false } }, y: { grid: { color: '#1e293b' } } }
+                }
+            },
+            wipDistribution: {
+                title: 'WIP DISTRIBUTION',
+                desc: 'Current work in progress split',
+                type: 'chart',
+                chartType: 'doughnut',
+                chartConfig: {
+                    labels: ['Backlog','In Progress','Review','Blocked'],
+                    datasets: [{ data: [15,22,8,2], backgroundColor: ['#f97316','#3b82f6','#8b5cf6','#ef4444'], borderWidth: 0, spacing: 2 }]
+                },
+                options: {
+                    cutout: '70%',
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } }
+                }
+            },
+            leadTime: {
+                title: 'LEAD TIME SCATTER',
+                desc: 'Delivery duration variance analysis',
+                type: 'chart',
+                chartType: 'scatter',
+                chartConfig: {
+                    datasets: [{
+                        data: [
+                            {x:1,y:2.5},{x:2,y:3.1},{x:3,y:1.8},{x:4,y:4.2},{x:5,y:2.9},{x:6,y:3.5},
+                            {x:7,y:2.1},{x:8,y:5.1},{x:9,y:3.8},{x:10,y:2.7},{x:11,y:4.5},{x:12,y:3.2}
+                        ],
+                        backgroundColor: 'rgba(139,92,246,0.6)', pointRadius: 4
+                    }]
+                },
+                options: {
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    scales: { x: { grid: { display: false }, max: 13 }, y: { grid: { color: '#1e293b' } } }
+                }
+            },
+            taskAging: {
+                title: 'TASK AGING',
+                desc: 'Stale items requiring immediate attention',
+                type: 'custom',
+                render: (container) => {
+                    container.innerHTML = `
+                        <div class="aging-visual">
+                            <div class="aging-col">
+                                <div class="aging-val">18</div>
+                                <div class="aging-bar" style="height: 35%; background: #22c55e;"></div>
+                                <div class="aging-label">0-2d</div>
+                            </div>
+                            <div class="aging-col">
+                                <div class="aging-val">14</div>
+                                <div class="aging-bar" style="height: 55%; background: #f59e0b;"></div>
+                                <div class="aging-label">3-5d</div>
+                            </div>
+                            <div class="aging-col">
+                                <div class="aging-val">9</div>
+                                <div class="aging-bar" style="height: 75%; background: #ef4444;"></div>
+                                <div class="aging-label">6-10d</div>
+                            </div>
+                            <div class="aging-col">
+                                <div class="aging-val">6</div>
+                                <div class="aging-bar" style="height: 90%; background: #a855f7;"></div>
+                                <div class="aging-label">10+d</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            },
+            systemLogs: {
+                title: 'SYSTEM LOGS',
+                desc: 'Real-time kanban engine activity',
+                type: 'terminal',
+                logs: [
+                    { type: 'sys', text: 'init: Engine v2.4.1 started' },
+                    { type: 't', text: '14:23:15' },
+                    { type: 'i', text: 'flow: Sprint #24 loaded (47 tasks)' },
+                    { type: 's', text: 'task: #1847 -> Ready (alice)' },
+                    { type: 'w', text: 'alert: WIP limit 92% reached' },
+                    { type: 't', text: '14:24:03' },
+                    { type: 's', text: 'task: #1839 -> Done OK' },
+                    { type: 'e', text: 'blocker: #1845 API auth fail' },
+                    { type: 't', text: '14:25:41' },
+                    { type: 'i', text: 'metrics: Cycle time 3.2d' },
+                    { type: 'sys', text: 'sync: Checkpoint OK' },
+                    { type: 't', text: '14:26:18' },
+                    { type: 's', text: 'task: #1840 -> Done OK' },
+                    { type: 'w', text: 'aging: #1834 > 12 days' },
+                    { type: 'sys', text: 'root@kanban-flow:~# _' }
+                ]
+            },
+            activityMap: {
+                title: 'ACTIVITY MAP',
+                desc: 'Daily completion intensity matrix',
+                type: 'heatmap',
+                data: [
+                    [0,1,2,3,4,3,2],
+                    [1,2,3,3,4,4,3],
+                    [2,3,4,4,5,4,3],
+                    [3,4,4,5,4,3,2],
+                    [2,3,4,4,3,2,1]
+                ]
+            }
+        };
+
+        let activeWidgets = [
+            { id: 'cumulativeFlow', colSpan: 1, rowSpan: 1 },
+            { id: 'cycleTime', colSpan: 1, rowSpan: 1 },
+            { id: 'throughput', colSpan: 1, rowSpan: 1 },
+            { id: 'wipDistribution', colSpan: 1, rowSpan: 1 },
+            { id: 'leadTime', colSpan: 1, rowSpan: 1 },
+            { id: 'taskAging', colSpan: 1, rowSpan: 1 },
+            { id: 'systemLogs', colSpan: 1, rowSpan: 1 },
+            { id: 'activityMap', colSpan: 1, rowSpan: 1 }
+        ];
+
+        let charts = {};
+        let modalChart = null;
+        let pendingSpan = { colSpan: 1, rowSpan: 1 };
+
+        Chart.defaults.font.family = "'SF Mono', 'Monaco', monospace";
+        Chart.defaults.color = '#64748b';
+        Chart.defaults.scale.grid.color = '#1e293b';
+        Chart.defaults.scale.grid.drawBorder = false;
+        Chart.defaults.responsive = true;
+        Chart.defaults.maintainAspectRatio = false;
+
+        function createWidgetElement(widgetData) {
+            const def = widgetDefinitions[widgetData.id];
+            const widget = document.createElement('div');
+            widget.className = 'widget';
+            widget.id = `widget-${widgetData.id}`;
+
+            if (widgetData.colSpan > 1) {
+                widget.style.gridColumn = `span ${widgetData.colSpan}`;
+            }
+            if (widgetData.rowSpan > 1) {
+                widget.style.gridRow = `span ${widgetData.rowSpan}`;
+            }
+
+            widget.innerHTML = `
+                <div class="window-header">
+                    <div class="window-controls">
+                        <button class="win-btn close" onclick="removeWidget('${widgetData.id}')" title="Close">x</button>
+                        <button class="win-btn minimize" title="Minimize">-</button>
+                        <button class="win-btn maximize" onclick="maximizeWidget('${widgetData.id}')" title="Maximize">[]</button>
+                    </div>
+                    <span class="window-title">${def.title}</span>
+                </div>
+                <div class="widget-content" id="content-${widgetData.id}"></div>
+            `;
+
+            return widget;
+        }
+
+        function renderWidget(widgetData) {
+            const def = widgetDefinitions[widgetData.id];
+            const container = document.getElementById(`content-${widgetData.id}`);
+            if (!container) return;
+
+            if (def.type === 'chart') {
+                const canvas = document.createElement('canvas');
+                canvas.id = `chart-${widgetData.id}`;
+                container.appendChild(canvas);
+
+                charts[widgetData.id] = new Chart(canvas, {
+                    type: def.chartType,
+                    data: def.chartConfig,
+                    options: def.options
+                });
+            } else if (def.type === 'custom') {
+                def.render(container);
+            } else if (def.type === 'terminal') {
+                container.className = 'term-body';
+                container.innerHTML = '';
+                def.logs.forEach(log => {
+                    const line = document.createElement('div');
+                    line.className = `term-line ${log.type}`;
+                    line.textContent = log.text;
+                    container.appendChild(line);
+                });
+                container.scrollTop = container.scrollHeight;
+            } else if (def.type === 'heatmap') {
+                container.className = 'heatmap-container';
+                const heatmap = document.createElement('div');
+                heatmap.className = 'heatmap';
+
+                const colorMap = ['#334155', '#86efac', '#22c55e', '#15803d', '#052e16'];
+
+                def.data.forEach(row => {
+                    row.forEach(val => {
+                        const cell = document.createElement('div');
+                        cell.className = 'heat-cell';
+                        cell.style.background = colorMap[val];
+                        heatmap.appendChild(cell);
+                    });
+                });
+
+                container.appendChild(heatmap);
+
+                const legend = document.createElement('div');
+                legend.className = 'legend';
+                legend.innerHTML = `
+                    <div class="legend-item"><div class="legend-box" style="background: #334155;"></div> 0</div>
+                    <div class="legend-item"><div class="legend-box" style="background: #22c55e;"></div> Low</div>
+                    <div class="legend-item"><div class="legend-box" style="background: #052e16;"></div> High</div>
+                `;
+                container.appendChild(legend);
+            }
+        }
+
+        function renderAllWidgets() {
+            const grid = document.getElementById('widgetGrid');
+            grid.innerHTML = '';
+
+            Object.values(charts).forEach(chart => chart.destroy());
+            charts = {};
+
+            activeWidgets.forEach(widgetData => {
+                const widget = createWidgetElement(widgetData);
+                grid.appendChild(widget);
+                renderWidget(widgetData);
+            });
+        }
+
+        function removeWidget(widgetId) {
+            const index = activeWidgets.findIndex(w => w.id === widgetId);
+            if (index > -1) {
+                activeWidgets.splice(index, 1);
+                if (charts[widgetId]) {
+                    charts[widgetId].destroy();
+                    delete charts[widgetId];
+                }
+                const widget = document.getElementById(`widget-${widgetId}`);
+                if (widget) {
+                    widget.style.opacity = '0';
+                    widget.style.transform = 'scale(0.9)';
+                    setTimeout(() => renderAllWidgets(), 250);
+                }
+            }
+        }
+
+        function maximizeWidget(widgetId) {
+            const def = widgetDefinitions[widgetId];
+            document.getElementById('modalTitle').textContent = def.title + ' -- Detailed View';
+            document.getElementById('maximizeModal').classList.add('active');
+
+            const ctx = document.getElementById('modalChart');
+
+            if (modalChart) {
+                modalChart.destroy();
+            }
+
+            if (def.type === 'chart') {
+                const modalOptions = JSON.parse(JSON.stringify(def.options));
+                modalOptions.plugins = {
+                    legend: { 
+                        display: true,
+                        labels: { color: '#e2e8f0', font: { size: 12 } }
+                    },
+                    tooltip: { 
+                        enabled: true,
+                        backgroundColor: '#1a1a1a',
+                        borderColor: '#2d3748',
+                        borderWidth: 1,
+                        titleColor: '#e2e8f0',
+                        bodyColor: '#94a3b8'
+                    }
+                };
+
+                if (modalOptions.scales) {
+                    modalOptions.scales.x = {
+                        ...modalOptions.scales.x,
+                        display: true,
+                        ticks: { color: '#64748b', font: { size: 11 } },
+                        grid: { color: '#1e293b' }
+                    };
+                    modalOptions.scales.y = {
+                        ...modalOptions.scales.y,
+                        display: true,
+                        ticks: { color: '#64748b', font: { size: 11 } },
+                        grid: { color: '#1e293b' }
+                    };
+                }
+
+                modalChart = new Chart(ctx, {
+                    type: def.chartType,
+                    data: def.chartConfig,
+                    options: modalOptions
+                });
+            } else {
+                const container = ctx.parentElement;
+                container.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column; gap: 16px;">
+                        <div style="font-size: 48px; opacity: 0.3;">[]</div>
+                        <div style="color: var(--text-muted); font-size: 14px;">${def.title}</div>
+                        <div style="color: var(--text); font-size: 16px;">${def.desc}</div>
+                        <div style="color: var(--text-muted); font-size: 12px; margin-top: 8px;">
+                            This widget type does not support detailed chart expansion.
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function closeMaximizeModal() {
+            document.getElementById('maximizeModal').classList.remove('active');
+            if (modalChart) {
+                modalChart.destroy();
+                modalChart = null;
+            }
+            const container = document.getElementById('modalChart').parentElement;
+            container.innerHTML = '<canvas id="modalChart"></canvas>';
+        }
+
+        function openWidgetSelector() {
+            const selector = document.getElementById('widgetSelector');
+            selector.innerHTML = '';
+
+            Object.entries(widgetDefinitions).forEach(([id, def]) => {
+                const isAdded = activeWidgets.some(w => w.id === id);
+                const option = document.createElement('div');
+                option.className = `widget-option ${isAdded ? 'added' : ''}`;
+                option.innerHTML = `
+                    <div class="widget-option-title">${def.title}</div>
+                    <div class="widget-option-desc">${def.desc}${isAdded ? ' (already added)' : ''}</div>
+                    ${!isAdded ? `
+                    <div class="span-controls">
+                        <div class="span-control">
+                            <label>Cols:</label>
+                            <select onchange="updatePendingSpan('${id}', 'colSpan', this.value)">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                            </select>
+                        </div>
+                        <div class="span-control">
+                            <label>Rows:</label>
+                            <select onchange="updatePendingSpan('${id}', 'rowSpan', this.value)">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="add-btn" onclick="addWidget('${id}')">ADD WIDGET</button>
+                    ` : ''}
+                `;
+                selector.appendChild(option);
+            });
+
+            document.getElementById('selectorModal').classList.add('active');
+        }
+
+        function updatePendingSpan(widgetId, type, value) {
+            if (!window.pendingSpans) window.pendingSpans = {};
+            if (!window.pendingSpans[widgetId]) window.pendingSpans[widgetId] = { colSpan: 1, rowSpan: 1 };
+            window.pendingSpans[widgetId][type] = parseInt(value);
+        }
+
+        function closeSelectorModal() {
+            document.getElementById('selectorModal').classList.remove('active');
+            window.pendingSpans = {};
+        }
+
+        function addWidget(widgetId) {
+            if (!activeWidgets.some(w => w.id === widgetId)) {
+                const spans = window.pendingSpans && window.pendingSpans[widgetId] 
+                    ? window.pendingSpans[widgetId] 
+                    : { colSpan: 1, rowSpan: 1 };
+                activeWidgets.push({ id: widgetId, colSpan: spans.colSpan, rowSpan: spans.rowSpan });
+                renderAllWidgets();
+                closeSelectorModal();
+            }
+        }
+
+        document.getElementById('maximizeModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeMaximizeModal();
+        });
+
+        document.getElementById('selectorModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeSelectorModal();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeMaximizeModal();
+                closeSelectorModal();
+            }
+        });
+
+        renderAllWidgets();
+    </script>
+</body>
+</html>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Sidebar from "./Sidebar";
+import ProjectNavigatorSidebar from "./ProjectNavigatorSidebar";
 import RightSidebarControls from "./RightSidebarControls";
 import TopBar from "./TopBar";
 import { useUI } from "@/components/providers/ui-provider";
@@ -14,10 +15,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const [rightPanelOpen, setRightPanelOpen] = useState(false);
     const { settings } = useUI();
     const pathname = usePathname();
+    const useProjectNavigator = pathname === "/dashboard/projects" || pathname.startsWith("/dashboard/projects/");
 
     return (
         <div className="flex h-screen overflow-hidden bg-background text-foreground">
-            <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+            {useProjectNavigator ? (
+                <ProjectNavigatorSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+            ) : (
+                <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+            )}
             <RightSidebarControls
                 isOpen={rightPanelOpen}
                 onOpen={() => setRightPanelOpen(true)}

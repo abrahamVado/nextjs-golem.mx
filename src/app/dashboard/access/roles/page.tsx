@@ -536,7 +536,7 @@ export default function RolesPage() {
     }
 
     return (
-        <DashboardCanvas className="bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.14),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(59,130,246,0.12),_transparent_30%),linear-gradient(180deg,#f8faf9_0%,#f3f7f5_100%)]">
+        <DashboardCanvas>
             <DashboardContent className="max-w-[1400px]">
                 <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div>

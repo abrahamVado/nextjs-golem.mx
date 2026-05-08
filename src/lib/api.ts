@@ -192,6 +192,11 @@ export const authApi = {
   acceptInvite: (data: { token: string; full_name: string; password: string }) => api.post('/auth/invites/accept', data),
 };
 
+export const whitelistApi = {
+  create: (data: { name: string; email: string; company?: string; subject?: string; message: string }) =>
+    api.post('/whitelist', data),
+};
+
 export const teamApi = {
   createTeam: (data: { name: string; slug: string }) => api.post<{ data: Team }>('/teams', data),
   updateTeam: (teamID: number | string, data: { name: string; slug: string }) =>
@@ -226,13 +231,38 @@ export const teamApi = {
 
 export const projectApi = {
   listProjects: (teamID: number | string) => api.get<{ data: UnknownRecord[] }>('/projects', { headers: teamHeaders(teamID) }),
-  createProject: (teamID: number | string, data: { name: string; description: string; icon?: string }) =>
+  createProject: (
+    teamID: number | string,
+    data: {
+      name: string;
+      description: string;
+      icon?: string;
+      sprint_size?: number | null;
+      sprint_start_date?: string;
+      members?: { user_id: string; role: "admin" | "member" }[];
+    }
+  ) =>
     api.post<{ data: UnknownRecord }>('/projects', data, { headers: teamHeaders(teamID) }),
-  updateProject: (projectId: string | number, teamID: number | string, data: { name: string; description: string; icon?: string }) =>
+  updateProject: (
+    projectId: string | number,
+    teamID: number | string,
+    data: {
+      name: string;
+      description: string;
+      icon?: string;
+      sprint_size?: number | null;
+      sprint_start_date?: string;
+    }
+  ) =>
     api.put<{ data: UnknownRecord }>(`/projects/${projectId}`, data, { headers: teamHeaders(teamID) }),
   deleteProject: (projectId: string | number, teamID: number | string) =>
     api.delete(`/projects/${projectId}`, { headers: teamHeaders(teamID) }),
   getProject: (projectId: string | number) => api.get<{ data: UnknownRecord }>(`/projects/${projectId}`),
+  getMembers: (projectId: string | number) => api.get<{ data: UnknownRecord[] }>(`/projects/${projectId}/members`),
+  updateMembers: (
+    projectId: string | number,
+    members: { user_id: string; role: "admin" | "member" }[]
+  ) => api.put<{ data: UnknownRecord[] }>(`/projects/${projectId}/members`, { members }),
   getEpics: (projectId: string | number) => api.get<{ data: Epic[] }>(`/projects/${projectId}/epics`),
   createEpic: (projectId: string | number, data: CreateEpicRequest) => api.post<{ data: Epic }>(`/projects/${projectId}/epics`, data),
   getMilestones: (projectId: string | number) => api.get<{ data: Milestone[] }>(`/projects/${projectId}/milestones`),
@@ -314,6 +344,24 @@ export const dashboardApi = {
         recent_projects: { id: string; name: string; description?: string; icon?: string; created_at?: string; task_count: number }[];
       };
     }>('/dashboard/summary'),
+  getSystemLogs: (limit = 12) =>
+    api.get<{
+      data: {
+        company_id: string;
+        generated_at: string;
+        items: {
+          id: string;
+          timestamp: string;
+          action: string;
+          resource: string;
+          actor_name?: string;
+          ip_address?: string;
+          user_agent?: string;
+          message: string;
+          severity: 'info' | 'warn' | 'error' | 'success' | string;
+        }[];
+      };
+    }>(`/dashboard/system-logs?limit=${encodeURIComponent(String(limit))}`),
 };
 
 export const notificationApi = {

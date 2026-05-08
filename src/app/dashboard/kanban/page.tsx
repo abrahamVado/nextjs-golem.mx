@@ -994,39 +994,7 @@ export default function KanbanPage({ initialProjectId = null }: { initialProject
                     />
 
                     <div className="space-y-4 rounded-[24px] border border-slate-200 bg-white/65 p-5 shadow-none">
-                        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-                            <div className="grid gap-4 md:grid-cols-[minmax(260px,320px)_auto]">
-                                <div>
-                                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                                        Project
-                                    </label>
-                                    <select
-                                        className="h-11 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 shadow-sm outline-none transition focus:border-emerald-300"
-                                        value={projectId ?? ""}
-                                        onChange={(e) => setProjectId(e.target.value || null)}
-                                    >
-                                        <option value="">Select a project</option>
-                                        {projects.map((project) => (
-                                            <option key={project.id} value={project.id}>
-                                                {project.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="flex items-end">
-                                    <div className="flex flex-wrap gap-3">
-                                        <Button variant="secondary" className="h-11 rounded-2xl px-4" onClick={openCreateProjectModal}>
-                                            <FolderPlus className="mr-2 h-4 w-4" />
-                                            New Project
-                                        </Button>
-                                        <Button variant="secondary" className="h-11 rounded-2xl px-4" onClick={openEditProjectModal} disabled={!selectedProject}>
-                                            <Pencil className="mr-2 h-4 w-4" />
-                                            Edit Project
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
-
+                        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                             <div className="flex flex-wrap items-center gap-3">
                                 {([
                                     { key: "all", label: "All tasks", icon: LayoutGrid },
@@ -1055,10 +1023,8 @@ export default function KanbanPage({ initialProjectId = null }: { initialProject
                                     Add Task
                                 </Button>
                             </div>
-                        </div>
 
-                        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                            <div className="relative w-full max-w-md">
+                            <div className="relative w-full xl:max-w-md">
                                 <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                                 <Input
                                     id="search-input"
@@ -1067,12 +1033,6 @@ export default function KanbanPage({ initialProjectId = null }: { initialProject
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                 />
-                            </div>
-                            <div className="flex flex-wrap items-center gap-2">
-                                <DashboardBadge tone="emerald">{columns.length} columns</DashboardBadge>
-                                <DashboardBadge tone="blue">{myTasks} assigned to me</DashboardBadge>
-                                <DashboardBadge tone="amber">{ownerGapTasks.length} without owner</DashboardBadge>
-                                <DashboardBadge tone="slate">{noDueDateTasks.length} without due date</DashboardBadge>
                             </div>
                         </div>
                     </div>

@@ -109,7 +109,7 @@ export function DashboardCanvas({
         <div
             data-dashboard-canvas
             className={cn(
-                'relative min-h-screen overflow-hidden rounded-[32px] bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.18),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(37,99,235,0.12),_transparent_28%),linear-gradient(135deg,#eef5f3_0%,#f8fbfa_46%,#eef7ff_100%)] p-4 md:p-8',
+                'relative min-h-screen overflow-hidden rounded-[32px] bg-background p-4 md:p-8',
                 className
             )}
         >

@@ -91,7 +91,7 @@ export function UIProvider({ children }: { children: React.ReactNode }) {
             >
                 {children}
                 {settings.enableNoise && (
-                    <div className="pointer-events-none fixed inset-0 z-[99999] h-full w-full opacity-[0.03] before:content-[''] before:fixed before:inset-0 before:bg-[url('https://grainy-gradients.vercel.app/noise.svg')] before:bg-repeat" />
+                    <div className="pointer-events-none fixed inset-0 z-[99999] h-full w-full opacity-[0.03] [background-image:radial-gradient(rgba(15,23,42,0.16)_0.7px,transparent_0.7px)] [background-size:12px_12px]" />
                 )}
             </div>
         </UIContext.Provider>

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import Image from "next/image";
 import { ensureGSAP } from "@/lib/gsap";
+import { whitelistApi } from "@/lib/api";
 import { useLanguage } from "@/components/providers/language-provider";
 import type { Locale } from "@/i18n";
 import styles from "./golemmx-landing-page.module.css";
@@ -30,6 +31,9 @@ const landingCopy: Record<Locale, {
     heading: string;
     body: string;
     cards: Array<{ key: string; name: string; copy: string; price: string; tag: string; tone: string; bars: readonly ["mid" | "full" | "short", "mid" | "full" | "short", "mid" | "full" | "short"] }>;
+    proofHeading: string;
+    proofBody: string;
+    proofCards: Array<{ key: string; name: string; copy: string; image?: string; accent: string }>;
   };
   portal: {
     heading: string;
@@ -41,6 +45,8 @@ const landingCopy: Record<Locale, {
   contact: {
     heading: string;
     body: string;
+    registerHeading: string;
+    registerBody: string;
     name: string;
     email: string;
     company: string;
@@ -53,6 +59,9 @@ const landingCopy: Record<Locale, {
     messagePlaceholder: string;
     submit: string;
     note: string;
+    submitting: string;
+    success: string;
+    error: string;
   };
   footer: string;
 }> = {
@@ -88,6 +97,13 @@ const landingCopy: Record<Locale, {
         { key: "three", name: "Projects and tasks", copy: "Turn every ticket into actionable work with lists, Kanban boards, timelines, and assigned tasks.", price: "Real collaboration", tag: "WORK", tone: "#f1e2ff", bars: ["short", "full", "mid"] as const },
         { key: "four", name: "Centralized tracking", copy: "Track progress, distribute ownership, and split a ticket into multiple tasks without leaving the platform.", price: "Full visibility", tag: "TRACK", tone: "#ffe3c4", bars: ["mid", "short", "full"] as const },
       ],
+      proofHeading: "How the workflow moves inside golem.mx",
+      proofBody: "The process starts with a shared operational view, continues in a Kanban flow where work is assigned and advanced, and lands in a project workspace where each delivery is tracked in detail.",
+      proofCards: [
+        { key: "workspace", name: "1. Operational overview", copy: "The team starts here to review incoming work, active priorities, and the overall status of the operation from a single dashboard.", image: "/dashboard.PNG", accent: "#dcfce7" },
+        { key: "kanban", name: "2. Work in progress", copy: "From there, tickets and tasks move through the Kanban board, where each item is assigned, updated, and advanced by the responsible team.", image: "/kanban-dashboard.PNG", accent: "#dbeafe" },
+        { key: "projects", name: "3. Project execution", copy: "When the work needs deeper follow-up, the team opens the project workspace to organize deliverables, track details, and keep execution aligned.", image: "/rbac.PNG", accent: "#f3e8ff" },
+      ],
     },
     portal: {
       heading: "From the client ticket to coordinated team execution",
@@ -102,20 +118,25 @@ const landingCopy: Record<Locale, {
       ],
     },
     contact: {
-      heading: "Contact",
-      body: "Request a demo through the form and tell us about your team, your support flow, or the operation you want to organize. We will help you shape the right setup and show you how golem.mx can fit your workflow.",
+      heading: "Join the whitelist",
+      body: "Request access to the golem.mx whitelist and tell us a bit about your team. We are opening access in stages and prioritizing teams with active support and operations workflows.",
+      registerHeading: "Contact",
+      registerBody: "Request a demo through the form and tell us about your team, your support flow, or the operation you want to organize. We will help you shape the right setup and show you how golem.mx can fit your workflow.",
       name: "Name",
       email: "Email",
       company: "Company",
-      subject: "Subject",
-      message: "Message",
+      subject: "Team or use case",
+      message: "Why do you want access?",
       namePlaceholder: "Your name",
       emailPlaceholder: "you@company.com",
       companyPlaceholder: "Your company name",
-      subjectPlaceholder: "Demo, support, integration...",
-      messagePlaceholder: "Tell us what you need",
-      submit: "Send inquiry",
-      note: "Or email us directly at hola@golem.mx",
+      subjectPlaceholder: "Support, operations, projects...",
+      messagePlaceholder: "Tell us how your team would use golem.mx",
+      submit: "Request whitelist access",
+      note: "You can also email hola@golem.mx to be added manually.",
+      submitting: "Sending...",
+      success: "Your whitelist request was received. We will review it and contact you soon.",
+      error: "We could not save your request right now. Please try again or email hola@golem.mx.",
     },
     footer: "golem.mx. Helpdesk and work management in one platform.",
   },
@@ -151,6 +172,13 @@ const landingCopy: Record<Locale, {
         { key: "three", name: "Proyectos y tareas", copy: "Convierte cada ticket en trabajo accionable con listas, tableros Kanban, timelines y tareas asignadas.", price: "Colaboracion real", tag: "WORK", tone: "#f1e2ff", bars: ["short", "full", "mid"] as const },
         { key: "four", name: "Seguimiento centralizado", copy: "Da seguimiento al avance, reparte responsables y divide un ticket en multiples tareas sin salir de la plataforma.", price: "Visibilidad total", tag: "TRACK", tone: "#ffe3c4", bars: ["mid", "short", "full"] as const },
       ],
+      proofHeading: "Asi avanza el flujo dentro de golem.mx",
+      proofBody: "El proceso empieza con una vista general de la operacion, continua en un flujo Kanban donde el trabajo se asigna y avanza, y termina en un workspace de proyecto donde cada entrega se sigue a detalle.",
+      proofCards: [
+        { key: "workspace", name: "1. Vista operativa", copy: "El equipo empieza aqui para revisar trabajo entrante, prioridades activas y el estado general de la operacion desde un solo dashboard.", image: "/dashboard.PNG", accent: "#dcfce7" },
+        { key: "kanban", name: "2. Trabajo en proceso", copy: "Desde ahi, los tickets y tareas avanzan por el tablero Kanban, donde cada elemento se asigna, se actualiza y cambia de etapa con claridad.", image: "/kanban-dashboard.PNG", accent: "#dbeafe" },
+        { key: "projects", name: "3. Ejecucion del proyecto", copy: "Cuando el trabajo necesita seguimiento mas profundo, el equipo entra al workspace del proyecto para organizar entregables, revisar detalles y mantener la ejecucion alineada.", image: "/rbac.PNG", accent: "#f3e8ff" },
+      ],
     },
     portal: {
       heading: "Del ticket del cliente al trabajo coordinado del equipo",
@@ -165,20 +193,25 @@ const landingCopy: Record<Locale, {
       ],
     },
     contact: {
-      heading: "Contacto",
-      body: "Solicita una demo desde el formulario y cuentanos sobre tu equipo, tu flujo de soporte o la operacion que quieres organizar. Te ayudamos a definir la mejor implementacion y a entender como golem.mx se adapta a tu flujo de trabajo.",
+      heading: "Unete a la whitelist",
+      body: "Solicita acceso a la whitelist de golem.mx y cuentanos un poco sobre tu equipo. Estamos abriendo el acceso por etapas y priorizando equipos con flujos activos de soporte y operacion.",
+      registerHeading: "Contacto",
+      registerBody: "Solicita una demo desde el formulario y cuentanos sobre tu equipo, tu flujo de soporte o la operacion que quieres organizar. Te ayudamos a definir la mejor implementacion y a entender como golem.mx se adapta a tu flujo de trabajo.",
       name: "Nombre",
       email: "Email",
       company: "Empresa",
-      subject: "Tema",
-      message: "Mensaje",
+      subject: "Equipo o caso de uso",
+      message: "Por que quieres acceso?",
       namePlaceholder: "Tu nombre",
       emailPlaceholder: "tu@empresa.com",
       companyPlaceholder: "Nombre de tu empresa",
-      subjectPlaceholder: "Demo, soporte, integracion...",
-      messagePlaceholder: "Cuentanos que necesitas",
-      submit: "Enviar consulta",
-      note: "O escribenos directo a hola@golem.mx",
+      subjectPlaceholder: "Soporte, operacion, proyectos...",
+      messagePlaceholder: "Cuentanos como usaria tu equipo golem.mx",
+      submit: "Solicitar acceso a la whitelist",
+      note: "Tambien puedes escribir a hola@golem.mx para agregarte manualmente.",
+      submitting: "Enviando...",
+      success: "Recibimos tu solicitud para la whitelist. La revisaremos y te contactaremos pronto.",
+      error: "No pudimos guardar tu solicitud en este momento. Intenta de nuevo o escribe a hola@golem.mx.",
     },
     footer: "golem.mx. Helpdesk y gestion de trabajo en una sola plataforma.",
   },
@@ -188,8 +221,42 @@ export function GolemMxLandingPage() {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const { locale, setLocale } = useLanguage();
   const copy = landingCopy[locale];
-  const marketCards = copy.market.cards;
+  const proofCards = copy.market.proofCards;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeProofCard, setActiveProofCard] = useState<(typeof copy.market.proofCards)[number] | null>(null);
+  const [isWhitelistSubmitting, setIsWhitelistSubmitting] = useState(false);
+  const [whitelistFeedback, setWhitelistFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  async function handleWhitelistSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setWhitelistFeedback(null);
+    setIsWhitelistSubmitting(true);
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const payload = {
+      name: String(formData.get("name") ?? "").trim(),
+      email: String(formData.get("email") ?? "").trim(),
+      company: String(formData.get("company") ?? "").trim(),
+      subject: String(formData.get("subject") ?? "").trim(),
+      message: String(formData.get("message") ?? "").trim(),
+    };
+
+    try {
+      await whitelistApi.create(payload);
+
+      form.reset();
+      setWhitelistFeedback({ type: "success", message: copy.contact.success });
+    } catch (error) {
+      const maybeError = error as { response?: { data?: { error?: { message?: string } } } };
+      const message =
+        maybeError.response?.data?.error?.message ||
+        (error instanceof Error && error.message ? error.message : copy.contact.error);
+      setWhitelistFeedback({ type: "error", message });
+    } finally {
+      setIsWhitelistSubmitting(false);
+    }
+  }
 
   useEffect(() => {
     if (!rootRef.current) return;
@@ -203,26 +270,8 @@ export function GolemMxLandingPage() {
       gsap.fromTo("[data-hero-dashboard]", { y: 95, rotateY: -34, rotateX: 20, rotateZ: 9, opacity: 0 }, { y: 0, rotateY: -13, rotateX: 7, rotateZ: 2, opacity: 1, duration: 1.25, ease: "power3.out", delay: 0.32 });
       gsap.fromTo("[data-app-card]", { scale: 0.68, y: 70, opacity: 0 }, { scale: 1, y: 0, opacity: 1, duration: 0.9, stagger: 0.12, ease: "back.out(1.8)", delay: 0.8 });
 
-      gsap.fromTo("[data-market-copy]", { y: 42, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, stagger: 0.08, ease: "power3.out", scrollTrigger: { trigger: "[data-market-stage]", start: "top 82%" } });
-      gsap.fromTo("[data-product-card]", { y: 120, z: -180, rotateX: 14, opacity: 0 }, { y: 0, z: 0, rotateX: 0, opacity: 1, duration: 0.9, stagger: 0.08, ease: "power3.out", scrollTrigger: { trigger: "[data-market-stage]", start: "top 78%" } });
-
-      marketCards.forEach((card, index) => {
-        gsap.to(`[data-product-card='${card.key}']`, {
-          x: [54, 12, -20, -54][index],
-          y: [-18, 26, -26, 18][index],
-          rotateY: [8, 0, 0, -8][index],
-          rotateZ: [-2, 2, -2, 2][index],
-          ease: "none",
-          scrollTrigger: { trigger: "[data-market-stage]", start: "top 75%", end: "bottom top", scrub: 1 },
-        });
-      });
-
-      gsap.to("[data-market-scene]", {
-        scale: 1.04,
-        y: -18,
-        ease: "none",
-        scrollTrigger: { trigger: "[data-market-stage]", start: "top 75%", end: "bottom top", scrub: 1 },
-      });
+      gsap.fromTo("[data-proof-copy]", { y: 36, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, stagger: 0.08, ease: "power3.out", scrollTrigger: { trigger: "[data-proof-stage]", start: "top 82%" } });
+      gsap.fromTo("[data-proof-card]", { y: 80, opacity: 0, scale: 0.92 }, { y: 0, opacity: 1, scale: 1, duration: 0.9, stagger: 0.12, ease: "power3.out", scrollTrigger: { trigger: "[data-proof-stage]", start: "top 78%" } });
 
       gsap.fromTo("[data-portal-copy]", { y: 42, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: "power3.out", scrollTrigger: { trigger: "[data-portal]", start: "top 82%" } });
       gsap.fromTo("[data-portal-window]", { x: 100, y: 48, rotateY: 24, rotateX: 10, opacity: 0 }, { x: 0, y: 0, rotateY: 10, rotateX: 5, opacity: 1, duration: 0.95, ease: "power3.out", scrollTrigger: { trigger: "[data-portal]", start: "top 78%" } });
@@ -236,11 +285,24 @@ export function GolemMxLandingPage() {
     }, rootRef);
 
     return () => ctx.revert();
-  }, [marketCards]);
+  }, [proofCards]);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [locale]);
+
+  useEffect(() => {
+    if (!activeProofCard) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setActiveProofCard(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeProofCard]);
 
   return (
     <div ref={rootRef} className={styles.page}>
@@ -377,28 +439,51 @@ export function GolemMxLandingPage() {
           </div>
         </section>
 
-        <section id="mercado" className={`${styles.section} ${styles.marketStage}`} data-market-stage="">
+        <section id="mercado" className={`${styles.section} ${styles.marketProofStage}`} data-proof-stage="">
           <div className={styles.container}>
-            <h2 className={styles.sectionHeading} data-market-copy="">{copy.market.heading}</h2>
-            <p className={styles.sectionCopy} data-market-copy="">{copy.market.body}</p>
+            <h2 className={styles.sectionHeading} data-proof-copy="">{copy.market.proofHeading}</h2>
+            <p className={styles.sectionCopy} data-proof-copy="">{copy.market.proofBody}</p>
 
-            <div className={styles.marketScene} data-market-scene="">
-              {copy.market.cards.map((card) => (
-                <article key={card.name} className={styles.productCard} data-product-card={card.key}>
-                  <div className={styles.productVisual} style={{ background: card.tone }} aria-hidden="true">
-                    {card.bars.map((bar, index) => (
-                      <div key={`${card.name}-${index}`} className={`${styles.bar} ${bar === "short" ? styles.barShort : ""} ${bar === "mid" ? styles.barMid : ""}`} />
-                    ))}
+            <div className={styles.proofGrid}>
+              {copy.market.proofCards.map((card) => (
+                <article key={card.key} className={styles.proofCard} data-proof-card="">
+                  <div className={styles.proofFrame}>
+                    <div className={styles.proofToolbar}>
+                      <div className={styles.proofDots} aria-hidden="true">
+                        <span />
+                        <span />
+                        <span />
+                      </div>
+                      <span className={styles.proofUrl}>app.golem.mx/{card.key}</span>
+                    </div>
+                    <button
+                      type="button"
+                      className={styles.proofScreenButton}
+                      onClick={() => setActiveProofCard(card)}
+                      aria-label={`Open ${card.name} screenshot`}
+                    >
+                      <div className={styles.proofScreen} style={{ background: `linear-gradient(180deg, ${card.accent} 0%, #ffffff 100%)` }}>
+                      {card.image ? (
+                        <Image src={card.image} alt={card.name} fill className={styles.proofImage} />
+                      ) : (
+                        <div className={styles.proofPlaceholder}>
+                          <div className={styles.proofPlaceholderBadge}>Screenshot slot</div>
+                          <div className={styles.proofPlaceholderBars} aria-hidden="true">
+                            <span />
+                            <span />
+                            <span />
+                            <span />
+                          </div>
+                          <p>Add a real screenshot here from `public/landing/screenshots/`</p>
+                        </div>
+                      )}
+                      </div>
+                    </button>
                   </div>
                   <h3>{card.name}</h3>
                   <p>{card.copy}</p>
-                  <div className={styles.productFooter}>
-                    <span>{card.price}</span>
-                    <span className={styles.pill}>{card.tag}</span>
-                  </div>
                 </article>
               ))}
-              <div className={styles.shelfBase} aria-hidden="true" />
             </div>
           </div>
         </section>
@@ -442,7 +527,7 @@ export function GolemMxLandingPage() {
                     <span>{copy.contact.heading}</span>
                     <span>online</span>
                   </div>
-                  <form className={styles.contactForm} data-contact-form="" action="mailto:hola@golem.mx" method="post" encType="text/plain">
+                  <form className={styles.contactForm} data-contact-form="" onSubmit={handleWhitelistSubmit}>
                     <label>
                       {copy.contact.name}
                       <input type="text" name="name" placeholder={copy.contact.namePlaceholder} required />
@@ -463,8 +548,20 @@ export function GolemMxLandingPage() {
                       {copy.contact.message}
                       <textarea name="message" placeholder={copy.contact.messagePlaceholder} required />
                     </label>
+                    {whitelistFeedback ? (
+                      <div
+                        className={styles.full}
+                        role="status"
+                        aria-live="polite"
+                        style={{ color: whitelistFeedback.type === "success" ? "#14532d" : "#991b1b", fontWeight: 600 }}
+                      >
+                        {whitelistFeedback.message}
+                      </div>
+                    ) : null}
                     <div className={styles.contactActions}>
-                      <button type="submit" className={`${styles.button} ${styles.buttonPrimary} contact-submit`}>{copy.contact.submit}</button>
+                      <button type="submit" disabled={isWhitelistSubmitting} className={`${styles.button} ${styles.buttonPrimary} contact-submit`}>
+                        {isWhitelistSubmitting ? copy.contact.submitting : copy.contact.submit}
+                      </button>
                       <span className={styles.contactNote}>{copy.contact.note}</span>
                     </div>
                   </form>
@@ -488,6 +585,32 @@ export function GolemMxLandingPage() {
           <p>&copy; {new Date().getFullYear()} {copy.footer}</p>
         </div>
       </footer>
+
+      {activeProofCard ? (
+        <div
+          className={styles.proofModal}
+          role="dialog"
+          aria-modal="true"
+          aria-label={activeProofCard.name}
+          onClick={() => setActiveProofCard(null)}
+        >
+          <div className={styles.proofModalFrame} onClick={(event) => event.stopPropagation()}>
+            <button
+              type="button"
+              className={styles.proofModalClose}
+              onClick={() => setActiveProofCard(null)}
+              aria-label="Close screenshot"
+            >
+              Close
+            </button>
+            <div className={styles.proofModalImageWrap}>
+              {activeProofCard.image ? (
+                <Image src={activeProofCard.image} alt={activeProofCard.name} fill className={styles.proofModalImage} />
+              ) : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
