@@ -18,7 +18,7 @@ import {
 } from '../types';
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
-const ACCESS_TOKEN_STORAGE_KEY = 'golem_access_token';
+const ACCESS_TOKEN_STORAGE_KEY = 'paladin_access_token';
 
 const api = axios.create({
   baseURL: API_BASE_URL,

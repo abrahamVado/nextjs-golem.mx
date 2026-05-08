@@ -307,7 +307,7 @@ export default function ProjectNavigatorSidebar({ isOpen, onClose }: { isOpen: b
                                 <button type="button" onClick={toggleSidebar} className="rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground">
                                     <Menu className="h-4 w-4" />
                                 </button>
-                                <Image src="/golem-logo.svg" alt="golem.mx" width={132} height={34} className="h-auto w-[132px]" priority />
+                                <Image src="/golem-logo.svg" alt="paladin.mx" width={132} height={34} className="h-auto w-[132px]" priority />
                             </div>
                             <Button variant="ghost" size="icon" onClick={toggleSidebar} className="hidden h-8 w-8 lg:flex">
                                 <ChevronLeft className="h-4 w-4" />

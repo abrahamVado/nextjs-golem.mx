@@ -76,7 +76,7 @@ const landingCopy: Record<Locale, {
     },
     hero: {
       title: "Receive client tickets and turn them into a workflow",
-      body: "golem.mx combines a helpdesk with a cloud work management platform to plan, organize, and track projects, tasks, tickets, and operational workflows in one place.",
+      body: "paladin.mx combines a helpdesk with a cloud work management platform to plan, organize, and track projects, tasks, tickets, and operational workflows in one place.",
       primaryCta: "Capabilities",
       secondaryCta: "How it works",
       tagOne: "Public ticket URL",
@@ -90,14 +90,14 @@ const landingCopy: Record<Locale, {
     },
     market: {
       heading: "One platform for support, collaboration, and work tracking",
-      body: "golem.mx helps teams receive tickets, organize them, assign them, turn them into tasks, and track progress with a clear view of ongoing work.",
+      body: "paladin.mx helps teams receive tickets, organize them, assign them, turn them into tasks, and track progress with a clear view of ongoing work.",
       cards: [
         { key: "one", name: "Ticket portal", copy: "Share a URL with clients so they can submit incidents and requests through a simple, organized channel.", price: "External support", tag: "HELPDESK", tone: "#dff1e4", bars: ["mid", "full", "short"] as const },
         { key: "two", name: "Automatic assignment", copy: "Each ticket can be routed automatically to the right team to reduce response times and manual work.", price: "Smart flow", tag: "AUTO", tone: "#dceaff", bars: ["full", "short", "mid"] as const },
         { key: "three", name: "Projects and tasks", copy: "Turn every ticket into actionable work with lists, Kanban boards, timelines, and assigned tasks.", price: "Real collaboration", tag: "WORK", tone: "#f1e2ff", bars: ["short", "full", "mid"] as const },
         { key: "four", name: "Centralized tracking", copy: "Track progress, distribute ownership, and split a ticket into multiple tasks without leaving the platform.", price: "Full visibility", tag: "TRACK", tone: "#ffe3c4", bars: ["mid", "short", "full"] as const },
       ],
-      proofHeading: "How the workflow moves inside golem.mx",
+      proofHeading: "How the workflow moves inside paladin.mx",
       proofBody: "The process starts with a shared operational view, continues in a Kanban flow where work is assigned and advanced, and lands in a project workspace where each delivery is tracked in detail.",
       proofCards: [
         { key: "workspace", name: "1. Operational overview", copy: "The team starts here to review incoming work, active priorities, and the overall status of the operation from a single dashboard.", image: "/dashboard.PNG", accent: "#dcfce7" },
@@ -108,7 +108,7 @@ const landingCopy: Record<Locale, {
     portal: {
       heading: "From the client ticket to coordinated team execution",
       body: "Share a URL with your clients to receive requests, let the platform assign them automatically, and then collaborate with your team using boards, lists, tasks, operational KPIs, velocity metrics, client satisfaction, and centralized performance tracking.",
-      title: "golem.mx operational flow",
+      title: "paladin.mx operational flow",
       score: "92%",
       rows: [
         ["1", "Ticket intake", "Share a URL so your clients can create tickets and requests through a centralized channel", "Active", "var(--green)"],
@@ -119,9 +119,9 @@ const landingCopy: Record<Locale, {
     },
     contact: {
       heading: "Join the whitelist",
-      body: "Request access to the golem.mx whitelist and tell us a bit about your team. We are opening access in stages and prioritizing teams with active support and operations workflows.",
+      body: "Request access to the paladin.mx whitelist and tell us a bit about your team. We are opening access in stages and prioritizing teams with active support and operations workflows.",
       registerHeading: "Contact",
-      registerBody: "Request a demo through the form and tell us about your team, your support flow, or the operation you want to organize. We will help you shape the right setup and show you how golem.mx can fit your workflow.",
+      registerBody: "Request a demo through the form and tell us about your team, your support flow, or the operation you want to organize. We will help you shape the right setup and show you how paladin.mx can fit your workflow.",
       name: "Name",
       email: "Email",
       company: "Company",
@@ -131,14 +131,14 @@ const landingCopy: Record<Locale, {
       emailPlaceholder: "you@company.com",
       companyPlaceholder: "Your company name",
       subjectPlaceholder: "Support, operations, projects...",
-      messagePlaceholder: "Tell us how your team would use golem.mx",
+      messagePlaceholder: "Tell us how your team would use paladin.mx",
       submit: "Request whitelist access",
-      note: "You can also email hola@golem.mx to be added manually.",
+      note: "You can also email hola@paladin.mx to be added manually.",
       submitting: "Sending...",
       success: "Your whitelist request was received. We will review it and contact you soon.",
-      error: "We could not save your request right now. Please try again or email hola@golem.mx.",
+      error: "We could not save your request right now. Please try again or email hola@paladin.mx.",
     },
-    footer: "golem.mx. Helpdesk and work management in one platform.",
+    footer: "paladin.mx. Helpdesk and work management in one platform.",
   },
   es: {
     nav: {
@@ -151,7 +151,7 @@ const landingCopy: Record<Locale, {
     },
     hero: {
       title: "Recibe tickets de tus clientes y conviertelos en un flujo de trabajo",
-      body: "golem.mx combina un helpdesk con una plataforma de gestion de trabajo en la nube para planear, organizar y dar seguimiento a proyectos, tareas, tickets y flujos operativos desde un solo lugar.",
+      body: "paladin.mx combina un helpdesk con una plataforma de gestion de trabajo en la nube para planear, organizar y dar seguimiento a proyectos, tareas, tickets y flujos operativos desde un solo lugar.",
       primaryCta: "Capacidades",
       secondaryCta: "Como funciona",
       tagOne: "URL publica para tickets",
@@ -165,14 +165,14 @@ const landingCopy: Record<Locale, {
     },
     market: {
       heading: "Una sola plataforma para soporte, colaboracion y seguimiento del trabajo",
-      body: "golem.mx ayuda a los equipos a recibir tickets, organizarlos, asignarlos, convertirlos en tareas y seguir el progreso con una vista clara del trabajo en curso.",
+      body: "paladin.mx ayuda a los equipos a recibir tickets, organizarlos, asignarlos, convertirlos en tareas y seguir el progreso con una vista clara del trabajo en curso.",
       cards: [
         { key: "one", name: "Portal de tickets", copy: "Comparte una URL con tus clientes para que reporten incidencias y solicitudes desde un canal simple y ordenado.", price: "Atencion externa", tag: "HELPDESK", tone: "#dff1e4", bars: ["mid", "full", "short"] as const },
         { key: "two", name: "Asignacion automatica", copy: "Cada ticket puede enrutarse automaticamente al equipo correcto para reducir tiempos de respuesta y evitar trabajo manual.", price: "Flujo inteligente", tag: "AUTO", tone: "#dceaff", bars: ["full", "short", "mid"] as const },
         { key: "three", name: "Proyectos y tareas", copy: "Convierte cada ticket en trabajo accionable con listas, tableros Kanban, timelines y tareas asignadas.", price: "Colaboracion real", tag: "WORK", tone: "#f1e2ff", bars: ["short", "full", "mid"] as const },
         { key: "four", name: "Seguimiento centralizado", copy: "Da seguimiento al avance, reparte responsables y divide un ticket en multiples tareas sin salir de la plataforma.", price: "Visibilidad total", tag: "TRACK", tone: "#ffe3c4", bars: ["mid", "short", "full"] as const },
       ],
-      proofHeading: "Asi avanza el flujo dentro de golem.mx",
+      proofHeading: "Asi avanza el flujo dentro de paladin.mx",
       proofBody: "El proceso empieza con una vista general de la operacion, continua en un flujo Kanban donde el trabajo se asigna y avanza, y termina en un workspace de proyecto donde cada entrega se sigue a detalle.",
       proofCards: [
         { key: "workspace", name: "1. Vista operativa", copy: "El equipo empieza aqui para revisar trabajo entrante, prioridades activas y el estado general de la operacion desde un solo dashboard.", image: "/dashboard.PNG", accent: "#dcfce7" },
@@ -183,7 +183,7 @@ const landingCopy: Record<Locale, {
     portal: {
       heading: "Del ticket del cliente al trabajo coordinado del equipo",
       body: "Comparte una URL con tus clientes para recibir solicitudes, deja que la plataforma las asigne automaticamente y despues colabora con tu equipo usando tableros, listas, tareas, KPIs operativos, metricas de velocidad, satisfaccion del cliente y seguimiento centralizado del rendimiento.",
-      title: "Flujo operativo de golem.mx",
+      title: "Flujo operativo de paladin.mx",
       score: "92%",
       rows: [
         ["1", "Recepcion de tickets", "Comparte una URL para que tus clientes creen tickets y solicitudes desde un canal centralizado", "Activo", "var(--green)"],
@@ -194,9 +194,9 @@ const landingCopy: Record<Locale, {
     },
     contact: {
       heading: "Unete a la whitelist",
-      body: "Solicita acceso a la whitelist de golem.mx y cuentanos un poco sobre tu equipo. Estamos abriendo el acceso por etapas y priorizando equipos con flujos activos de soporte y operacion.",
+      body: "Solicita acceso a la whitelist de paladin.mx y cuentanos un poco sobre tu equipo. Estamos abriendo el acceso por etapas y priorizando equipos con flujos activos de soporte y operacion.",
       registerHeading: "Contacto",
-      registerBody: "Solicita una demo desde el formulario y cuentanos sobre tu equipo, tu flujo de soporte o la operacion que quieres organizar. Te ayudamos a definir la mejor implementacion y a entender como golem.mx se adapta a tu flujo de trabajo.",
+      registerBody: "Solicita una demo desde el formulario y cuentanos sobre tu equipo, tu flujo de soporte o la operacion que quieres organizar. Te ayudamos a definir la mejor implementacion y a entender como paladin.mx se adapta a tu flujo de trabajo.",
       name: "Nombre",
       email: "Email",
       company: "Empresa",
@@ -206,18 +206,18 @@ const landingCopy: Record<Locale, {
       emailPlaceholder: "tu@empresa.com",
       companyPlaceholder: "Nombre de tu empresa",
       subjectPlaceholder: "Soporte, operacion, proyectos...",
-      messagePlaceholder: "Cuentanos como usaria tu equipo golem.mx",
+      messagePlaceholder: "Cuentanos como usaria tu equipo paladin.mx",
       submit: "Solicitar acceso a la whitelist",
-      note: "Tambien puedes escribir a hola@golem.mx para agregarte manualmente.",
+      note: "Tambien puedes escribir a hola@paladin.mx para agregarte manualmente.",
       submitting: "Enviando...",
       success: "Recibimos tu solicitud para la whitelist. La revisaremos y te contactaremos pronto.",
-      error: "No pudimos guardar tu solicitud en este momento. Intenta de nuevo o escribe a hola@golem.mx.",
+      error: "No pudimos guardar tu solicitud en este momento. Intenta de nuevo o escribe a hola@paladin.mx.",
     },
-    footer: "golem.mx. Helpdesk y gestion de trabajo en una sola plataforma.",
+    footer: "paladin.mx. Helpdesk y gestion de trabajo en una sola plataforma.",
   },
 } as const;
 
-export function GolemMxLandingPage() {
+export function PaladinMxLandingPage() {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const { locale, setLocale } = useLanguage();
   const copy = landingCopy[locale];
@@ -310,8 +310,8 @@ export function GolemMxLandingPage() {
       <div className={styles.grain} aria-hidden="true" />
 
       <header className={`${styles.nav} ${isMobileMenuOpen ? styles.navMenuOpen : styles.navMenuClosed}`} data-landing-nav="">
-        <a href="#hero" className={styles.brand} aria-label="golem.mx - Ir al inicio">
-          <img src="/golem-logo.svg" alt="golem.mx" className={styles.brandLogo} />
+        <a href="#hero" className={styles.brand} aria-label="paladin.mx - Ir al inicio">
+          <img src="/golem-logo.svg" alt="paladin.mx" className={styles.brandLogo} />
         </a>
         <nav className={styles.navLinks} aria-label="Navegacion principal">
           <a href="#mercado" onClick={() => setIsMobileMenuOpen(false)}>{copy.nav.capabilities}</a>
@@ -454,7 +454,7 @@ export function GolemMxLandingPage() {
                         <span />
                         <span />
                       </div>
-                      <span className={styles.proofUrl}>app.golem.mx/{card.key}</span>
+                      <span className={styles.proofUrl}>app.paladin.mx/{card.key}</span>
                     </div>
                     <button
                       type="button"
@@ -579,8 +579,8 @@ export function GolemMxLandingPage() {
 
       <footer className={styles.footer}>
         <div className={`${styles.container} ${styles.footerInner}`}>
-          <a href="#hero" className={styles.brand} aria-label="golem.mx - Volver al inicio">
-            <img src="/golem-logo.svg" alt="golem.mx" className={styles.brandLogo} />
+          <a href="#hero" className={styles.brand} aria-label="paladin.mx - Volver al inicio">
+            <img src="/golem-logo.svg" alt="paladin.mx" className={styles.brandLogo} />
           </a>
           <p>&copy; {new Date().getFullYear()} {copy.footer}</p>
         </div>

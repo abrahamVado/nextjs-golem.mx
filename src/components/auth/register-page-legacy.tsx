@@ -79,8 +79,8 @@ export function RegisterPageLegacy() {
 
             <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col">
                 <header className="flex items-center justify-between py-3">
-                    <Link href="/" aria-label="golem.mx - Go to home">
-                        <Image src="/golem-logo.svg" alt="golem.mx" width={168} height={44} className="h-auto w-[168px]" />
+                    <Link href="/" aria-label="paladin.mx - Go to home">
+                        <Image src="/golem-logo.svg" alt="paladin.mx" width={168} height={44} className="h-auto w-[168px]" />
                     </Link>
                     <div className="flex items-center gap-3">
                         <div className="inline-flex items-center gap-1 rounded-xl border border-black/10 bg-white/70 p-1 shadow-sm backdrop-blur">
@@ -217,7 +217,7 @@ export function RegisterPageLegacy() {
                 </div>
 
                 <footer className="flex items-center justify-between border-t border-black/8 py-4 text-sm text-slate-500">
-                    <span>&copy; {new Date().getFullYear()} golem.mx</span>
+                    <span>&copy; {new Date().getFullYear()} paladin.mx</span>
                     <Link href="/" className="transition hover:text-slate-900">
                         {locale === "es" ? "Volver al sitio" : "Back to site"}
                     </Link>
