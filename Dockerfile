@@ -8,8 +8,8 @@ RUN apt-get update \
 
 COPY package*.json ./
 
-RUN npm config set registry http://registry.npmjs.org/ \
-    && npm ci --no-audit --no-fund
+RUN npm ci --no-audit --no-fund
+
 
 FROM node:22-bookworm-slim AS builder
 
@@ -27,6 +27,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run build
 
+
 FROM node:22-bookworm-slim AS runner
 
 WORKDIR /app
@@ -37,6 +38,8 @@ RUN apt-get update \
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV HOSTNAME=0.0.0.0
+ENV PORT=3000
 
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./

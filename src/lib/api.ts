@@ -17,7 +17,7 @@ import {
   AdminInvite,
 } from '../types';
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.paladin.mx/api/v1';
 const ACCESS_TOKEN_STORAGE_KEY = 'paladin_access_token';
 
 const api = axios.create({

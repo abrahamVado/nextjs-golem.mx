@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const backendURL = process.env.BACKEND_INTERNAL_URL || "http://localhost:8080";
+const backendURL = process.env.BACKEND_INTERNAL_URL || "http://go-api:8080";
 
 // Build allowed image origins from environment
 const allowedImageHosts: { protocol: "http" | "https"; hostname: string; port?: string; pathname: string }[] = [

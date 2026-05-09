@@ -1,24 +1,17 @@
 <svg
-  width="360"
-  height="96"
-  viewBox="132 28 268 84"
+  width="520"
+  height="120"
+  viewBox="120 20 420 110"
   fill="none"
   xmlns="http://www.w3.org/2000/svg"
   role="img"
   aria-labelledby="title desc"
 >
-  <title id="title">Golem.mx Logo</title>
-  <desc id="desc">Modern wordmark logo with the text Golem.mx on transparent background</desc>
+  <title id="title">Paladin.mx Logo</title>
 
   <defs>
-    <linearGradient id="golemGradient" x1="0%" y1="0%" x2="100%" y2="0%" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#12100d"/>
-      <stop offset="50%" stop-color="#12100d"/>
-      <stop offset="100%" stop-color="#12100d"/>
-    </linearGradient>
-
     <clipPath id="textClip">
-      <rect x="136" y="32" width="272" height="72" rx="4"/>
+      <rect x="120" y="20" width="420" height="110" rx="4"/>
     </clipPath>
   </defs>
 
@@ -32,6 +25,6 @@
     fill="#12100d"
     clip-path="url(#textClip)"
   >
-    Golem<tspan fill="#12100d" font-weight="700">.mx</tspan>
+    Paladin<tspan fill="#12100d" font-weight="700">.mx</tspan>
   </text>
 </svg>
