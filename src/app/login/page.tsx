@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { getErrorMessage } from "@/lib/errors";
 import { authApi } from "@/lib/api";
 
@@ -21,13 +21,24 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
+function subscribeLocation(onStoreChange: () => void) {
+    window.addEventListener("popstate", onStoreChange);
+    window.addEventListener("hashchange", onStoreChange);
+    return () => {
+        window.removeEventListener("popstate", onStoreChange);
+        window.removeEventListener("hashchange", onStoreChange);
+    };
+}
+
+function getErrorSnapshot() {
+    return new URL(window.location.href).searchParams.get("error");
+}
+
 export default function LoginPage() {
     const { login } = useAuth();
     const { locale, setLocale } = useLanguage();
-    const [error, setError] = useState<string | null>(() => {
-        if (typeof window === "undefined") return null;
-        return new URL(window.location.href).searchParams.get("error");
-    });
+    const initialError = useSyncExternalStore(subscribeLocation, getErrorSnapshot, () => null);
+    const [error, setError] = useState<string | null>(initialError);
 
     const {
         register,

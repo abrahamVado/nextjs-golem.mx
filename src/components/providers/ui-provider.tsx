@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useSyncExternalStore } from "react";
 
 type UISettings = {
     enableGlassmorphism: boolean;
@@ -31,6 +31,9 @@ const defaultSettings: UISettings = {
     layoutMode: "boxed",
 };
 
+let lastUISettingsRaw: string | null = null;
+let lastUISettingsSnapshot: UISettings = defaultSettings;
+
 function resolveInitialSettings(): UISettings {
     if (typeof window === "undefined") return defaultSettings;
 
@@ -44,7 +47,13 @@ function resolveInitialSettings(): UISettings {
     }
 
     if (!saved) {
-        return { ...defaultSettings, themeMode: resolvedThemeMode };
+        const fallbackRaw = JSON.stringify({ ...defaultSettings, themeMode: resolvedThemeMode });
+        if (lastUISettingsRaw === fallbackRaw) {
+            return lastUISettingsSnapshot;
+        }
+        lastUISettingsRaw = fallbackRaw;
+        lastUISettingsSnapshot = { ...defaultSettings, themeMode: resolvedThemeMode };
+        return lastUISettingsSnapshot;
     }
 
     try {
@@ -52,17 +61,35 @@ function resolveInitialSettings(): UISettings {
         if (parsed.themeMode === "dark" || parsed.themeMode === "light") {
             resolvedThemeMode = parsed.themeMode;
         }
-        return { ...defaultSettings, ...parsed, themeMode: resolvedThemeMode };
+        const raw = JSON.stringify({ ...defaultSettings, ...parsed, themeMode: resolvedThemeMode });
+        if (lastUISettingsRaw === raw) {
+            return lastUISettingsSnapshot;
+        }
+        lastUISettingsRaw = raw;
+        lastUISettingsSnapshot = { ...defaultSettings, ...parsed, themeMode: resolvedThemeMode };
+        return lastUISettingsSnapshot;
     } catch (error) {
         console.error("Failed to parse UI settings", error);
-        return { ...defaultSettings, themeMode: resolvedThemeMode };
+        const fallbackRaw = JSON.stringify({ ...defaultSettings, themeMode: resolvedThemeMode });
+        if (lastUISettingsRaw === fallbackRaw) {
+            return lastUISettingsSnapshot;
+        }
+        lastUISettingsRaw = fallbackRaw;
+        lastUISettingsSnapshot = { ...defaultSettings, themeMode: resolvedThemeMode };
+        return lastUISettingsSnapshot;
     }
 }
 
 const UIContext = createContext<UIContextType | undefined>(undefined);
 
+function subscribeUISettings(onStoreChange: () => void) {
+    window.addEventListener("storage", onStoreChange);
+    return () => window.removeEventListener("storage", onStoreChange);
+}
+
 export function UIProvider({ children }: { children: React.ReactNode }) {
-    const [settings, setSettings] = useState<UISettings>(resolveInitialSettings);
+    const storedSettings = useSyncExternalStore(subscribeUISettings, resolveInitialSettings, () => defaultSettings);
+    const [settings, setSettings] = useState<UISettings>(storedSettings);
     const [headerTitle, setHeaderTitle] = useState("");
     const [headerDescription, setHeaderDescription] = useState("");
 

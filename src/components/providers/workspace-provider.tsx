@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useSyncExternalStore } from "react";
 
 type TeamSummary = {
     id: number;
@@ -26,16 +26,30 @@ type WorkspaceContextType = {
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
 
 function parseStoredNumber(key: string): number | null {
-    if (typeof window === "undefined") return null;
     const value = localStorage.getItem(key);
     if (!value) return null;
     const parsed = Number(value);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
+function subscribeWorkspaceStore(onStoreChange: () => void) {
+    window.addEventListener("storage", onStoreChange);
+    return () => window.removeEventListener("storage", onStoreChange);
+}
+
+function getStoredTeamIdSnapshot() {
+    return parseStoredNumber("current_team_id");
+}
+
+function getStoredProjectIdSnapshot() {
+    return parseStoredNumber("current_project_id");
+}
+
 export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
-    const [currentTeamIdState, setCurrentTeamIdState] = useState<number | null>(() => parseStoredNumber("current_team_id"));
-    const [currentProjectIdState, setCurrentProjectIdState] = useState<number | null>(() => parseStoredNumber("current_project_id"));
+    const storedTeamId = useSyncExternalStore(subscribeWorkspaceStore, getStoredTeamIdSnapshot, () => null);
+    const storedProjectId = useSyncExternalStore(subscribeWorkspaceStore, getStoredProjectIdSnapshot, () => null);
+    const [currentTeamIdState, setCurrentTeamIdState] = useState<number | null>(storedTeamId);
+    const [currentProjectIdState, setCurrentProjectIdState] = useState<number | null>(storedProjectId);
     const [teams, setTeamsState] = useState<TeamSummary[]>([]);
     const [projectsByTeam, setProjectsByTeam] = useState<Record<number, ProjectSummary[]>>({});
 

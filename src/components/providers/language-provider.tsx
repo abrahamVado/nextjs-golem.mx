@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useSyncExternalStore } from "react";
 import { locales, Locale, defaultLocale } from "@/i18n";
 
 type LanguageContextType = {
@@ -11,15 +11,22 @@ type LanguageContextType = {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
+function subscribeLanguageStore(onStoreChange: () => void) {
+    window.addEventListener("storage", onStoreChange);
+    return () => window.removeEventListener("storage", onStoreChange);
+}
+
+function getLanguageSnapshot(): Locale {
+    const savedLocale = localStorage.getItem("larago-locale") as Locale | null;
+    if (savedLocale && locales[savedLocale]) {
+        return savedLocale;
+    }
+    return defaultLocale;
+}
+
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-    const [locale, setLocaleState] = useState<Locale>(() => {
-        if (typeof window === "undefined") return defaultLocale;
-        const savedLocale = localStorage.getItem("larago-locale") as Locale | null;
-        if (savedLocale && locales[savedLocale]) {
-            return savedLocale;
-        }
-        return defaultLocale;
-    });
+    const storedLocale = useSyncExternalStore(subscribeLanguageStore, getLanguageSnapshot, () => defaultLocale);
+    const [locale, setLocaleState] = useState<Locale>(storedLocale);
 
     const setLocale = (newLocale: Locale) => {
         if (locales[newLocale]) {

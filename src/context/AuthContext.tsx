@@ -1,7 +1,7 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState, ReactNode } from "react";
-import api, { authApi } from "@/lib/api";
+import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from "react";
+import api, { authApi, clearAccessToken } from "@/lib/api";
 import { SessionMetadata, SessionPolicy } from "@/types";
 import { useRouter } from "next/navigation";
 import { resolveAssetURL } from "@/lib/assets";
@@ -25,16 +25,6 @@ interface User {
     updated_at?: string;
 }
 
-type MeResponse = {
-    user_id: string;
-    company_id: string;
-    branch_id?: string | null;
-    name?: string;
-    email?: string;
-    role?: string;
-    avatar_url?: string;
-};
-
 interface LoginCredentials {
     email: string;
     password: string;
@@ -47,6 +37,16 @@ interface RegisterPayload {
     password: string;
     name: string;
 }
+
+type MeResponse = {
+    user_id: string;
+    company_id: string;
+    branch_id?: string | null;
+    name?: string;
+    email?: string;
+    role?: string;
+    avatar_url?: string;
+};
 
 interface AuthContextType {
     user: User | null;
@@ -62,34 +62,21 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function parseJwtPayload(token: string): { user_id: string; company_id: string; branch_id?: string | null } | null {
-    try {
-        const [, payload] = token.split(".");
-        if (!payload) return null;
-        const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
-        const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
-        const decoded = JSON.parse(atob(padded)) as { user_id: string; company_id: string; branch_id?: string | null };
-        if (!decoded.user_id || !decoded.company_id) return null;
-        return decoded;
-    } catch {
-        return null;
-    }
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [session, setSession] = useState<SessionMetadata | null>(null);
     const [sessionPolicy, setSessionPolicy] = useState<SessionPolicy | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const lastSessionRefreshRef = useRef(0);
     const router = useRouter();
 
+    const clearAuthState = useCallback(() => {
+        clearAccessToken();
+        setUser(null);
+        setSession(null);
+        setSessionPolicy(null);
+    }, []);
+
     const refreshSession = useCallback(async () => {
-        const now = Date.now();
-        if (now-lastSessionRefreshRef.current < 15_000) {
-            return;
-        }
-        lastSessionRefreshRef.current = now;
         setSession(null);
         setSessionPolicy(null);
     }, []);
@@ -109,35 +96,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             });
             await refreshSession();
         } catch {
-            setUser(null);
-            setSession(null);
-            setSessionPolicy(null);
+            clearAuthState();
         } finally {
             setIsLoading(false);
         }
-    }, [refreshSession]);
+    }, [clearAuthState, refreshSession]);
 
     useEffect(() => {
-        void checkAuth();
-    }, [checkAuth]);
+        let active = true;
+
+        const bootstrapAuth = async () => {
+            setIsLoading(true);
+            try {
+                await authApi.refresh();
+                if (!active) return;
+                await checkAuth();
+            } catch {
+                if (!active) return;
+                clearAuthState();
+                setIsLoading(false);
+            }
+        };
+
+        void bootstrapAuth();
+
+        return () => {
+            active = false;
+        };
+    }, [checkAuth, clearAuthState]);
 
     const login = async (credentials: LoginCredentials) => {
-        const loginRes = await authApi.login(credentials);
-        const token = loginRes.data.data.access_token;
-        const payload = parseJwtPayload(token);
-
-        if (payload) {
-            setUser({
-                id: payload.user_id,
-                company_id: payload.company_id,
-                branch_id: payload.branch_id,
-                email: "",
-                name: payload.user_id,
-                avatar_url: resolveAssetURL(undefined),
-            });
-            setIsLoading(false);
-        }
-
+        setIsLoading(true);
+        await authApi.login(credentials);
         await checkAuth();
         router.push("/dashboard");
     };
@@ -150,9 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
             await authApi.logout();
         } finally {
-            setUser(null);
-            setSession(null);
-            setSessionPolicy(null);
+            clearAuthState();
             router.push("/login");
         }
     };

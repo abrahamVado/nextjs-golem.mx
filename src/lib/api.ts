@@ -18,7 +18,6 @@ import {
 } from '../types';
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.paladin.mx/api/v1';
-const ACCESS_TOKEN_STORAGE_KEY = 'paladin_access_token';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -29,19 +28,12 @@ const api = axios.create({
   withCredentials: true,
 });
 
-function getStoredAccessToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
-}
-
-function storeAccessToken(token: string | null | undefined) {
-  if (typeof window === 'undefined') return;
-  if (token) localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, token);
-  else localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
-}
-
 export function clearAccessToken() {
-  storeAccessToken(null);
+  // Browser auth now relies on HTTP-only cookies managed by the backend.
+}
+
+export function hasAccessToken() {
+  return false;
 }
 
 function getCookie(name: string): string | null {
@@ -53,12 +45,6 @@ function getCookie(name: string): string | null {
 }
 
 api.interceptors.request.use((config) => {
-  const accessToken = getStoredAccessToken();
-  if (accessToken) {
-    config.headers = config.headers || {};
-    config.headers.Authorization = `Bearer ${accessToken}`;
-  }
-
   const method = (config.method || 'get').toLowerCase();
   if (['post', 'put', 'patch', 'delete'].includes(method)) {
     const csrf = getCookie('csrf_token');
@@ -71,43 +57,8 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (response) => {
-    const maybeToken = (response.data as { data?: { access_token?: string } } | undefined)?.data?.access_token;
-    if (maybeToken) {
-      storeAccessToken(maybeToken);
-    }
-    return response;
-  },
+  (response) => response,
   async (error) => {
-    const originalRequest = error.config;
-    if (!originalRequest) return Promise.reject(error);
-
-    const requestUrl: string = originalRequest.url || "";
-    const isAuthEndpoint =
-      requestUrl.includes("/auth/login") ||
-      requestUrl.includes("/auth/register") ||
-      requestUrl.includes("/auth/forgot-password") ||
-      requestUrl.includes("/auth/reset-password") ||
-      requestUrl.includes("/auth/verify-email") ||
-      requestUrl.includes("/auth/resend-verification") ||
-      requestUrl.includes("/auth/refresh");
-
-    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
-      originalRequest._retry = true;
-      try {
-        const refreshResponse = await api.post<{ data: { access_token: string } }>('/auth/refresh', {});
-        const refreshedToken = refreshResponse.data.data.access_token;
-        storeAccessToken(refreshedToken);
-        originalRequest.headers = originalRequest.headers || {};
-        originalRequest.headers.Authorization = `Bearer ${refreshedToken}`;
-        return api(originalRequest);
-      } catch {
-        clearAccessToken();
-        // Preserve the original 401 from the request that failed.
-        return Promise.reject(error);
-      }
-    }
-
     return Promise.reject(error);
   }
 );
@@ -166,14 +117,10 @@ function toCanonicalPriority(priority?: string): string | undefined {
 
 export const authApi = {
   login: async (data: { email: string; password: string; remember_me?: boolean }) => {
-    const response = await api.post<{ data: { access_token: string; token_type: string; expires_in: number } }>('/auth/login', data);
-    storeAccessToken(response.data.data.access_token);
-    return response;
+    return api.post<{ data: { token_type: string; expires_in: number } }>('/auth/login', data);
   },
   refresh: async () => {
-    const response = await api.post<{ data: { access_token: string; token_type: string; expires_in: number } }>('/auth/refresh', {});
-    storeAccessToken(response.data.data.access_token);
-    return response;
+    return api.post<{ data: { token_type: string; expires_in: number } }>('/auth/refresh', {});
   },
   logout: async () => {
     try {
