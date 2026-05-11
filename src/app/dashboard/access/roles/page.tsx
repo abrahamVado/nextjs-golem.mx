@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Minus, Pencil, Plus, ShieldPlus, Trash2, X } from 'lucide-react';
 import { createBackendPermission, createBackendRole, deleteBackendRole, getBackendPermissions, getBackendRolePermissions, getBackendRoles, updateBackendRole } from '@/lib/backend-access';
-import { DashboardBadge, DashboardCanvas, DashboardContent, DashboardModalFrame, DashboardNotice, DashboardStatCard, DashboardSurface } from '@/components/layout/dashboard-visuals';
+import { DashboardBadge, DashboardCanvas, DashboardContent, DashboardHero, DashboardModalFrame, DashboardNotice, DashboardSurface, DashboardToolbar } from '@/components/layout/dashboard-visuals';
 import { getErrorMessage } from '@/lib/errors';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
@@ -538,46 +538,79 @@ export default function RolesPage() {
     return (
         <DashboardCanvas>
             <DashboardContent className="max-w-[1400px]">
-                <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-emerald-700">
-                            Access / Roles
-                        </div>
-                        <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 md:text-4xl">Team & Permissions</h1>
-                        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 md:text-base">
-                            Control access levels and replace the old roles view with a live permission matrix that still speaks to the current backend contract.
-                        </p>
+                <DashboardHero
+                    eyebrow={<><span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_6px_rgba(16,185,129,0.16)]" />Access / Roles</>}
+                    title="Role management with the same control-room energy"
+                    description="Review role coverage, inspect permission modules, and update access structure from a richer hero surface while keeping the live matrix workflow intact."
+                    right={
+                        <DashboardSurface className="border-slate-200/80 bg-white/75 p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+                            <div className="mb-3 text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">System health</div>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                                    <span className="text-sm font-semibold text-slate-900">Role feed</span>
+                                    <span className="inline-flex items-center gap-2 text-xs font-extrabold text-emerald-700">
+                                        <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                                        Live
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                                    <span className="text-sm font-semibold text-slate-900">Module</span>
+                                    <span className="text-xs font-extrabold text-slate-600">{rolesInfo?.module || 'roles'}</span>
+                                </div>
+                                <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                                    <span className="text-sm font-semibold text-slate-900">Tenant</span>
+                                    <span className="text-xs font-extrabold text-slate-600">{rolesInfo?.company_id?.slice(0, 8) || 'n/a'}</span>
+                                </div>
+                                <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                                    <span className="text-sm font-semibold text-slate-900">Total roles</span>
+                                    <span className="text-xs font-extrabold text-slate-600">{stats.roleCount}</span>
+                                </div>
+                                <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                                    <span className="text-sm font-semibold text-slate-900">Permissions</span>
+                                    <span className="text-xs font-extrabold text-emerald-700">{stats.permissionCount}</span>
+                                </div>
+                                <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                                    <span className="text-sm font-semibold text-slate-900">Modules</span>
+                                    <span className="text-xs font-extrabold text-amber-700">{stats.moduleCount}</span>
+                                </div>
+                            </div>
+                        </DashboardSurface>
+                    }
+                />
+
+                <DashboardToolbar>
+                    <div className="flex flex-wrap items-center gap-3">
+                        <DashboardBadge>
+                            {stats.roleCount} {stats.roleCount === 1 ? 'role' : 'roles'} across {stats.moduleCount} {stats.moduleCount === 1 ? 'module' : 'modules'}
+                        </DashboardBadge>
+                        <DashboardBadge className="bg-white/85">
+                            {stats.permissionCount} permission {stats.permissionCount === 1 ? 'column' : 'columns'}
+                        </DashboardBadge>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3">
-                        <div className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                            {rolesInfo?.module || 'roles'}
-                        </div>
+                        <DashboardBadge>
+                            Matrix ready
+                        </DashboardBadge>
                         <Button
-                            className="rounded-xl bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                            className="rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700"
                             onClick={openCreateRoleModal}
                         >
                             <ShieldPlus className="h-4 w-4" />
                             Add Role
                         </Button>
                     </div>
-                </div>
-
-                <div className="mb-6 grid gap-4 md:grid-cols-3">
-                    <DashboardStatCard label="Roles" value={stats.roleCount} hint="Active roles visible in this matrix view." />
-                    <DashboardStatCard label="Permissions" value={stats.permissionCount} hint="Permission columns grouped into access modules." />
-                    <DashboardStatCard label="Tenant" value={rolesInfo?.company_id?.slice(0, 8) || 'n/a'} hint="Current backend company context." />
-                </div>
+                </DashboardToolbar>
 
                 {error ? (
                     <DashboardNotice className="mb-6">{error}</DashboardNotice>
                 ) : null}
 
-                <div className="space-y-8">
+                <div className="grid gap-6 xl:grid-cols-2">
                     {modules.map((module) => (
                         <section
                             key={module.id}
-                            className="overflow-hidden rounded-[24px] border border-slate-200/80 bg-white/70 shadow-[0_12px_34px_rgba(15,23,42,0.05)] backdrop-blur"
+                            className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/70 shadow-[0_12px_34px_rgba(15,23,42,0.05)] backdrop-blur"
                         >
                             <div className="flex flex-col gap-3 px-5 py-5 md:flex-row md:items-center md:justify-between">
                                 <div className="flex items-center gap-3">
@@ -600,14 +633,14 @@ export default function RolesPage() {
                                         <h2 className="text-base font-semibold text-slate-950">{module.name}</h2>
                                         <p className="text-sm text-slate-500">
                                             {collapsedModules[module.id]
-                                                ? 'Table minimized. Expand to review and edit role permissions.'
-                                                : 'Permissions arranged as a role-by-role matrix.'}
+                                                ? 'Card minimized. Expand to review and edit role permissions.'
+                                                : 'Permissions arranged as role cards instead of a table grid.'}
                                         </p>
                                     </div>
                                 </div>
                                 <div className="flex flex-wrap items-center gap-2">
                                     <DashboardBadge className="py-1 text-xs font-semibold">
-                                        {roles.length} roles · {module.permissions.length} permissions
+                                        {roles.length} roles / {module.permissions.length} permissions
                                     </DashboardBadge>
                                     <button
                                         type="button"
@@ -623,95 +656,109 @@ export default function RolesPage() {
                             <div
                                 id={`module-table-${module.id}`}
                                 hidden={!!collapsedModules[module.id]}
-                                className="overflow-x-auto border-t border-slate-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.05)]"
+                                className="border-t border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.05)]"
                             >
-                                <table className="min-w-[700px] w-full border-collapse">
-                                    <thead className="bg-slate-50">
-                                        <tr className="border-b-2 border-slate-200">
-                                            <th className="w-[220px] min-w-[220px] px-6 py-4 text-left text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
-                                                Role
-                                            </th>
-                                            {module.permissions.map((permission, permIndex) => (
-                                                <th key={`${module.id}-${permission}`} className="relative px-5 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
-                                                    <div className="mx-auto max-w-[140px] text-balance normal-case tracking-normal text-slate-600">
-                                                        {permission}
+                                <div className="mb-4 flex flex-wrap gap-3">
+                                    {module.permissions.map((permission, permIndex) => (
+                                        <div
+                                            key={`${module.id}-${permission}`}
+                                            className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
+                                        >
+                                            <div className="min-w-0">
+                                                <div className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-500">Permission</div>
+                                                <div className="mt-1 text-sm font-semibold text-slate-800">{permission}</div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-500 transition hover:bg-red-500 hover:text-white"
+                                                onClick={() => removePermission(module.id, permIndex)}
+                                                aria-label={`Remove ${permission}`}
+                                            >
+                                                <X className="h-3.5 w-3.5" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="grid gap-4 md:grid-cols-2">
+                                    {roles.map((role, roleIndex) => (
+                                        <article
+                                            key={role.id}
+                                            className="group rounded-[24px] border border-slate-200 bg-white/90 p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(15,23,42,0.08)]"
+                                        >
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="flex items-center gap-3">
+                                                    <span
+                                                        className={cn('inline-block h-3 w-3 rounded-full', role.dotClass)}
+                                                        style={{ backgroundColor: role.color }}
+                                                    />
+                                                    <div>
+                                                        <div className="text-sm font-semibold text-slate-900">{role.name}</div>
+                                                        <div className="mt-1 text-xs text-slate-500">
+                                                            {role.persisted ? role.sourceStatus : 'local matrix state'}
+                                                        </div>
                                                     </div>
+                                                </div>
+                                                <div className="flex items-center gap-2 opacity-100 transition md:opacity-0 md:group-hover:opacity-100">
                                                     <button
                                                         type="button"
-                                                        className="absolute right-1 top-1 inline-flex h-5 w-5 items-center justify-center rounded bg-red-50 text-red-500 transition hover:bg-red-500 hover:text-white"
-                                                        onClick={() => removePermission(module.id, permIndex)}
-                                                        aria-label={`Remove ${permission}`}
+                                                        className="rounded-xl bg-slate-100 px-2.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200"
+                                                        onClick={() => openEditRoleModal(role)}
                                                     >
-                                                        <X className="h-3 w-3" />
+                                                        <Pencil className="h-3.5 w-3.5" />
                                                     </button>
-                                                </th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {roles.map((role, roleIndex) => (
-                                            <tr key={role.id} className="group border-b border-slate-200 transition hover:bg-emerald-50/40">
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center justify-between gap-3">
-                                                        <div className="flex items-center gap-3">
-                                                            <span
-                                                                className={cn('inline-block h-2.5 w-2.5 rounded-full', role.dotClass)}
-                                                                style={{ backgroundColor: role.color }}
-                                                            />
-                                                            <div>
-                                                                <div className="text-sm font-semibold text-slate-900">{role.name}</div>
-                                                                <div className="mt-1 text-xs text-slate-500">
-                                                                    {role.persisted ? role.sourceStatus : 'local matrix state'}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex items-center gap-2 opacity-0 transition group-hover:opacity-100">
-                                                            <button
-                                                                type="button"
-                                                                className="rounded-lg bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-200"
-                                                                onClick={() => openEditRoleModal(role)}
-                                                            >
-                                                                <Pencil className="h-3.5 w-3.5" />
-                                                            </button>
-                                                            <button
-                                                                type="button"
-                                                                className="rounded-lg bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-100 disabled:opacity-60"
-                                                                onClick={() => void removeRole(roleIndex)}
-                                                                disabled={updatingRoleId === role.id}
-                                                            >
-                                                                <Trash2 className="h-3.5 w-3.5" />
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                {module.permissions.map((_, permIndex) => {
+                                                    <button
+                                                        type="button"
+                                                        className="rounded-xl bg-red-50 px-2.5 py-2 text-xs font-semibold text-red-600 hover:bg-red-100 disabled:opacity-60"
+                                                        onClick={() => void removeRole(roleIndex)}
+                                                        disabled={updatingRoleId === role.id}
+                                                    >
+                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                                {module.permissions.map((permission, permIndex) => {
                                                     const checked = !!role.perms[module.id]?.[permIndex];
                                                     return (
-                                                        <td key={`${role.id}-${module.id}-${permIndex}`} className="px-5 py-4 text-center">
-                                                            <div className="flex justify-center">
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => togglePermission(roleIndex, module.id, permIndex)}
-                                                                    disabled={updatingRoleId === role.id}
-                                                                    className={cn(
-                                                                        'flex h-6 w-6 items-center justify-center rounded-md border-2 transition disabled:cursor-not-allowed disabled:opacity-60',
-                                                                        checked
-                                                                            ? 'border-emerald-500 bg-emerald-500 text-white'
-                                                                            : 'border-slate-300 bg-white text-transparent hover:border-emerald-500'
-                                                                    )}
-                                                                    aria-pressed={checked}
-                                                                    aria-label={`${checked ? 'Revoke' : 'Grant'} ${module.permissions[permIndex]} for ${role.name}`}
-                                                                >
-                                                                    <span className="h-2.5 w-1.5 rotate-45 border-b-2 border-r-2 border-current" />
-                                                                </button>
+                                                        <div
+                                                            key={`${role.id}-${module.id}-${permIndex}`}
+                                                            className={cn(
+                                                                'flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 transition',
+                                                                checked
+                                                                    ? 'border-emerald-200 bg-emerald-50/80'
+                                                                    : 'border-slate-200 bg-slate-50'
+                                                            )}
+                                                        >
+                                                            <div className="min-w-0">
+                                                                <div className="text-sm font-semibold text-slate-800">{permission}</div>
+                                                                <div className="mt-1 text-xs text-slate-500">
+                                                                    {checked ? 'Granted for this role' : 'Not granted'}
+                                                                </div>
                                                             </div>
-                                                        </td>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => togglePermission(roleIndex, module.id, permIndex)}
+                                                                disabled={updatingRoleId === role.id}
+                                                                className={cn(
+                                                                    'flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border-2 transition disabled:cursor-not-allowed disabled:opacity-60',
+                                                                    checked
+                                                                        ? 'border-emerald-500 bg-emerald-500 text-white'
+                                                                        : 'border-slate-300 bg-white text-transparent hover:border-emerald-500'
+                                                                )}
+                                                                aria-pressed={checked}
+                                                                aria-label={`${checked ? 'Revoke' : 'Grant'} ${permission} for ${role.name}`}
+                                                            >
+                                                                <span className="h-3 w-1.5 rotate-45 border-b-2 border-r-2 border-current" />
+                                                            </button>
+                                                        </div>
                                                     );
                                                 })}
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                            </div>
+                                        </article>
+                                    ))}
+                                </div>
                             </div>
                         </section>
                     ))}
