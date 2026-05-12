@@ -2,10 +2,6 @@ FROM node:20-bookworm-slim AS deps
 
 WORKDIR /app
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates openssl \
-    && rm -rf /var/lib/apt/lists/*
-
 ARG NPM_CONFIG_STRICT_SSL=true
 ENV NPM_CONFIG_STRICT_SSL=$NPM_CONFIG_STRICT_SSL
 RUN npm config set strict-ssl $NPM_CONFIG_STRICT_SSL \
@@ -14,16 +10,13 @@ RUN npm config set strict-ssl $NPM_CONFIG_STRICT_SSL \
 
 COPY package*.json ./
 
-RUN npm ci --no-audit --no-fund
+RUN npm ci --include=optional --no-audit --no-fund
+RUN npm install --no-save --no-audit --no-fund @next/swc-linux-x64-gnu@16.1.3 lightningcss-linux-x64-gnu@1.30.2
 
 
 FROM node:20-bookworm-slim AS builder
 
 WORKDIR /app
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates openssl \
-    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -41,10 +34,6 @@ RUN npm run build
 FROM node:20-bookworm-slim AS runner
 
 WORKDIR /app
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates openssl \
-    && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1

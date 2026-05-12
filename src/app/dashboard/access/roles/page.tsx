@@ -1,10 +1,11 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Minus, Pencil, Plus, ShieldPlus, Trash2, X } from 'lucide-react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { Pencil, Plus, ShieldPlus, Trash2, X } from 'lucide-react';
 import { createBackendPermission, createBackendRole, deleteBackendRole, getBackendPermissions, getBackendRolePermissions, getBackendRoles, updateBackendRole } from '@/lib/backend-access';
 import { DashboardBadge, DashboardCanvas, DashboardContent, DashboardHero, DashboardModalFrame, DashboardNotice, DashboardSurface, DashboardToolbar } from '@/components/layout/dashboard-visuals';
 import { getErrorMessage } from '@/lib/errors';
+import { ensureGSAP } from '@/lib/gsap';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 
@@ -25,6 +26,7 @@ type PermissionRecord = {
 type MatrixRole = {
     id: string;
     name: string;
+    description: string;
     color: string;
     dotClass: string;
     persisted: boolean;
@@ -177,6 +179,7 @@ function buildRoleMatrix(
         return {
             id,
             name,
+            description: String(item.description ?? '').trim(),
             color: String(item.color ?? pickRoleColor(index)),
             dotClass: pickRoleDotClass(name),
             persisted: true,
@@ -188,7 +191,37 @@ function buildRoleMatrix(
     });
 }
 
+function getRoleUserCount(role: MatrixRole) {
+    const candidates = [
+        role.raw.user_count,
+        role.raw.users_count,
+        role.raw.member_count,
+        role.raw.members_count,
+        role.raw.assigned_users_count,
+    ];
+
+    for (const value of candidates) {
+        const parsed = Number(value);
+        if (Number.isFinite(parsed)) return parsed;
+    }
+
+    const users = role.raw.users;
+    if (Array.isArray(users)) return users.length;
+
+    return 0;
+}
+
+function getRolePermissionCount(role: MatrixRole) {
+    if (role.permissionIds.length > 0) return role.permissionIds.length;
+
+    return Object.values(role.perms).reduce(
+        (total, values) => total + values.filter(Boolean).length,
+        0
+    );
+}
+
 export default function RolesPage() {
+    const [showDocumentation, setShowDocumentation] = useState(false);
     const [rolesInfo, setRolesInfo] = useState<{ company_id: string; module: string; items: RawRecord[] } | null>(null);
     const [permissionsInfo, setPermissionsInfo] = useState<{ company_id: string; module: string; items: RawRecord[] } | null>(null);
     const [roles, setRoles] = useState<MatrixRole[]>([]);
@@ -200,12 +233,15 @@ export default function RolesPage() {
     const [updatingRoleId, setUpdatingRoleId] = useState<string | null>(null);
     const [showRoleModal, setShowRoleModal] = useState(false);
     const [showPermModal, setShowPermModal] = useState(false);
+    const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
     const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
     const [savingRole, setSavingRole] = useState(false);
     const [savingPermission, setSavingPermission] = useState(false);
-    const [roleForm, setRoleForm] = useState({ id: '', name: '', color: ROLE_COLORS[0], mode: 'create' as 'create' | 'edit' });
+    const [roleForm, setRoleForm] = useState({ id: '', name: '', description: '', color: ROLE_COLORS[0], mode: 'create' as 'create' | 'edit' });
     const [permissionName, setPermissionName] = useState('');
-    const [collapsedModules, setCollapsedModules] = useState<Record<string, boolean>>({});
+    const drawerOverlayRef = useRef<HTMLButtonElement | null>(null);
+    const drawerPanelRef = useRef<HTMLElement | null>(null);
+    const previousDrawerRoleIdRef = useRef<string | null>(null);
 
     const stats = useMemo(() => {
         const permissionCount = modules.reduce((total, module) => total + module.permissions.length, 0);
@@ -215,6 +251,11 @@ export default function RolesPage() {
             moduleCount: modules.length,
         };
     }, [modules, roles]);
+
+    const selectedRole = useMemo(
+        () => roles.find((role) => role.id === selectedRoleId) || null,
+        [roles, selectedRoleId]
+    );
 
     const rawPayload = useMemo(
         () => ({
@@ -229,6 +270,38 @@ export default function RolesPage() {
         const timer = window.setTimeout(() => setToast(null), 2200);
         return () => window.clearTimeout(timer);
     }, [toast]);
+
+    useEffect(() => {
+        const previousRoleId = previousDrawerRoleIdRef.current;
+        previousDrawerRoleIdRef.current = selectedRoleId;
+
+        if (!selectedRoleId || previousRoleId === selectedRoleId || !drawerOverlayRef.current || !drawerPanelRef.current) return;
+
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (reduceMotion) return;
+
+        const gsap = ensureGSAP();
+        const ctx = gsap.context(() => {
+            gsap.set(drawerOverlayRef.current, { opacity: 0 });
+            gsap.set(drawerPanelRef.current, { xPercent: 10, opacity: 0.96 });
+
+            gsap.to(drawerOverlayRef.current, {
+                opacity: 1,
+                duration: 0.24,
+                ease: 'power2.out',
+            });
+
+            gsap.to(drawerPanelRef.current, {
+                xPercent: 0,
+                opacity: 1,
+                duration: 0.42,
+                ease: 'power3.out',
+                clearProps: 'transform,opacity',
+            });
+        });
+
+        return () => ctx.revert();
+    }, [selectedRoleId]);
 
     useEffect(() => {
         let active = true;
@@ -264,14 +337,11 @@ export default function RolesPage() {
                 );
                 const rolePermissionIds = Object.fromEntries(rolePermissionPairs);
                 const nextRoles = buildRoleMatrix(nextRolesInfo.items || [], nextModules, rolePermissionIds, permissionLookupByModule);
-                const nextCollapsedModules = Object.fromEntries(nextModules.map((module) => [module.id, true]));
-
                 setRolesInfo(nextRolesInfo);
                 setPermissionsInfo(nextPermissionsInfo);
                 setModules(nextModules);
                 setPermissionRecords(nextPermissionRecords);
                 setRoles(nextRoles);
-                setCollapsedModules(nextCollapsedModules);
             } catch (err: unknown) {
                 if (!active) return;
                 setError(getErrorMessage(err, 'Failed to load roles and permissions from the Go backend.'));
@@ -287,17 +357,10 @@ export default function RolesPage() {
         };
     }, []);
 
-    const openPermissionModal = (moduleId: string) => {
-        setSelectedModuleId(moduleId);
+    const openPermissionModal = (moduleId?: string) => {
+        setSelectedModuleId(moduleId || modules[0]?.id || null);
         setPermissionName('');
         setShowPermModal(true);
-    };
-
-    const toggleModuleCollapse = (moduleId: string) => {
-        setCollapsedModules((current) => ({
-            ...current,
-            [moduleId]: !current[moduleId],
-        }));
     };
 
     const togglePermission = async (roleIndex: number, moduleId: string, permIndex: number) => {
@@ -368,6 +431,7 @@ export default function RolesPage() {
         setRoleForm({
             id: role.id,
             name: role.name,
+            description: role.description,
             color: role.color,
             mode: 'edit',
         });
@@ -375,8 +439,39 @@ export default function RolesPage() {
     };
 
     const openCreateRoleModal = () => {
-        setRoleForm({ id: '', name: '', color: ROLE_COLORS[0], mode: 'create' });
+        setRoleForm({ id: '', name: '', description: '', color: ROLE_COLORS[0], mode: 'create' });
         setShowRoleModal(true);
+    };
+
+    const openRoleDetails = (roleId: string) => {
+        setSelectedRoleId(roleId);
+    };
+
+    const closeRoleDetails = () => {
+        if (!selectedRole) return;
+
+        const reduceMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (reduceMotion || !drawerOverlayRef.current || !drawerPanelRef.current) {
+            setSelectedRoleId(null);
+            return;
+        }
+
+        const closingRoleId = selectedRole.id;
+        const gsap = ensureGSAP();
+        gsap.to(drawerOverlayRef.current, {
+            opacity: 0,
+            duration: 0.2,
+            ease: 'power2.in',
+        });
+        gsap.to(drawerPanelRef.current, {
+            xPercent: 10,
+            opacity: 0.96,
+            duration: 0.28,
+            ease: 'power2.inOut',
+            onComplete: () => {
+                setSelectedRoleId((current) => (current === closingRoleId ? null : current));
+            },
+        });
     };
 
     const addPermission = () => {
@@ -436,35 +531,10 @@ export default function RolesPage() {
         })();
     };
 
-    const removePermission = (moduleId: string, permIndex: number) => {
-        const targetModule = modules.find((item) => item.id === moduleId);
-        const permissionLabel = targetModule?.permissions[permIndex];
-        if (!permissionLabel) return;
-
-        setModules((current) =>
-            current.map((item) =>
-                item.id === moduleId
-                    ? { ...item, permissions: item.permissions.filter((_, index) => index !== permIndex) }
-                    : item
-            )
-        );
-
-        setRoles((current) =>
-            current.map((role) => ({
-                ...role,
-                perms: {
-                    ...role.perms,
-                    [moduleId]: (role.perms[moduleId] || []).filter((_, index) => index !== permIndex),
-                },
-            }))
-        );
-
-        setToast(`"${permissionLabel}" removed`);
-    };
-
     const handleSaveRole = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         const trimmedName = roleForm.name.trim();
+        const trimmedDescription = roleForm.description.trim();
 
         if (!trimmedName) {
             setToast('Please enter a role name');
@@ -474,7 +544,7 @@ export default function RolesPage() {
         setSavingRole(true);
         try {
             if (roleForm.mode === 'edit' && roleForm.id) {
-                const response = await updateBackendRole(roleForm.id, { name: trimmedName });
+                const response = await updateBackendRole(roleForm.id, { name: trimmedName, description: trimmedDescription });
                 const updatedRole = response.data.data;
 
                 setRoles((current) =>
@@ -483,8 +553,9 @@ export default function RolesPage() {
                             ? {
                                   ...role,
                                   name: String(updatedRole.name ?? trimmedName),
+                                  description: String(updatedRole.description ?? trimmedDescription),
                                   color: roleForm.color,
-                                  raw: typeof updatedRole === 'object' && updatedRole ? { ...updatedRole, color: roleForm.color } : { ...role.raw, name: trimmedName, color: roleForm.color },
+                                  raw: typeof updatedRole === 'object' && updatedRole ? { ...updatedRole, color: roleForm.color } : { ...role.raw, name: trimmedName, description: trimmedDescription, color: roleForm.color },
                                   dotClass: pickRoleDotClass(trimmedName),
                               }
                             : role
@@ -495,26 +566,27 @@ export default function RolesPage() {
                         ? {
                               ...current,
                               items: current.items.map((item) =>
-                                  String(item.id) === roleForm.id ? { ...item, name: trimmedName, color: roleForm.color } : item
+                                  String(item.id) === roleForm.id ? { ...item, name: trimmedName, description: trimmedDescription, color: roleForm.color } : item
                               ),
                           }
                         : current
                 );
                 setToast(`Role "${trimmedName}" updated`);
             } else {
-                const response = await createBackendRole({ name: trimmedName });
+                const response = await createBackendRole({ name: trimmedName, description: trimmedDescription });
                 const createdRole = response.data.data;
 
                 const newRole: MatrixRole = {
                     id: String(createdRole.id ?? `${slugify(trimmedName) || 'role'}-${Date.now()}`),
                     name: String(createdRole.name ?? trimmedName),
+                    description: String(createdRole.description ?? trimmedDescription),
                     color: roleForm.color,
                     dotClass: pickRoleDotClass(trimmedName),
                     persisted: true,
                     sourceStatus: String(createdRole.status ?? 'active'),
                     permissionIds: [],
                     perms: Object.fromEntries(modules.map((module) => [module.id, Array(module.permissions.length).fill(0)])),
-                    raw: typeof createdRole === 'object' && createdRole ? { ...createdRole, color: roleForm.color } : { name: trimmedName, color: roleForm.color },
+                    raw: typeof createdRole === 'object' && createdRole ? { ...createdRole, color: roleForm.color } : { name: trimmedName, description: trimmedDescription, color: roleForm.color },
                 };
 
                 setRoles((current) => [...current, newRole]);
@@ -522,7 +594,7 @@ export default function RolesPage() {
                 setToast(`Role "${trimmedName}" added`);
             }
 
-            setRoleForm({ id: '', name: '', color: ROLE_COLORS[0], mode: 'create' });
+            setRoleForm({ id: '', name: '', description: '', color: ROLE_COLORS[0], mode: 'create' });
             setShowRoleModal(false);
         } catch (err: unknown) {
             setError(getErrorMessage(err, roleForm.mode === 'edit' ? 'Failed to update role.' : 'Failed to create role.'));
@@ -542,244 +614,198 @@ export default function RolesPage() {
                     eyebrow={<><span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_6px_rgba(16,185,129,0.16)]" />Access / Roles</>}
                     title="Role management with the same control-room energy"
                     description="Review role coverage, inspect permission modules, and update access structure from a richer hero surface while keeping the live matrix workflow intact."
+                    className="overflow-visible"
                     right={
-                        <DashboardSurface className="border-slate-200/80 bg-white/75 p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
-                            <div className="mb-3 text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">System health</div>
-                            <div className="grid gap-3 sm:grid-cols-2">
-                                <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
-                                    <span className="text-sm font-semibold text-slate-900">Role feed</span>
-                                    <span className="inline-flex items-center gap-2 text-xs font-extrabold text-emerald-700">
-                                        <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                                        Live
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
-                                    <span className="text-sm font-semibold text-slate-900">Module</span>
-                                    <span className="text-xs font-extrabold text-slate-600">{rolesInfo?.module || 'roles'}</span>
-                                </div>
-                                <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
-                                    <span className="text-sm font-semibold text-slate-900">Tenant</span>
-                                    <span className="text-xs font-extrabold text-slate-600">{rolesInfo?.company_id?.slice(0, 8) || 'n/a'}</span>
-                                </div>
-                                <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
-                                    <span className="text-sm font-semibold text-slate-900">Total roles</span>
-                                    <span className="text-xs font-extrabold text-slate-600">{stats.roleCount}</span>
-                                </div>
-                                <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
-                                    <span className="text-sm font-semibold text-slate-900">Permissions</span>
-                                    <span className="text-xs font-extrabold text-emerald-700">{stats.permissionCount}</span>
-                                </div>
-                                <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
-                                    <span className="text-sm font-semibold text-slate-900">Modules</span>
-                                    <span className="text-xs font-extrabold text-amber-700">{stats.moduleCount}</span>
-                                </div>
+                        <div className="space-y-4">
+                            <div className="flex flex-wrap items-center gap-3">
+                                <Button
+                                    className={cn(
+                                        'rounded-2xl px-5 text-sm',
+                                        showDocumentation
+                                            ? 'bg-slate-900 text-white hover:bg-slate-800'
+                                            : 'bg-white text-slate-900 hover:bg-slate-100'
+                                    )}
+                                    onClick={() => setShowDocumentation(true)}
+                                >
+                                    Documentation
+                                </Button>
+                                {showDocumentation ? (
+                                    <Button
+                                        variant="outline"
+                                        className="rounded-2xl border-slate-300 bg-white/80 text-slate-700 hover:bg-slate-100"
+                                        onClick={() => setShowDocumentation(false)}
+                                    >
+                                        Back to roles
+                                    </Button>
+                                ) : null}
                             </div>
-                        </DashboardSurface>
+                            <DashboardSurface className="border-slate-200/80 bg-white/75 p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+                                <div className="mb-3 text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">System health</div>
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                    <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                                        <span className="text-sm font-semibold text-slate-900">Role feed</span>
+                                        <span className="inline-flex items-center gap-2 text-xs font-extrabold text-emerald-700">
+                                            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                                            Live
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                                        <span className="text-sm font-semibold text-slate-900">Module</span>
+                                        <span className="text-xs font-extrabold text-slate-600">{rolesInfo?.module || 'roles'}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                                        <span className="text-sm font-semibold text-slate-900">Tenant</span>
+                                        <span className="text-xs font-extrabold text-slate-600">{rolesInfo?.company_id?.slice(0, 8) || 'n/a'}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                                        <span className="text-sm font-semibold text-slate-900">Total roles</span>
+                                        <span className="text-xs font-extrabold text-slate-600">{stats.roleCount}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                                        <span className="text-sm font-semibold text-slate-900">Permissions</span>
+                                        <span className="text-xs font-extrabold text-emerald-700">{stats.permissionCount}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                                        <span className="text-sm font-semibold text-slate-900">Modules</span>
+                                        <span className="text-xs font-extrabold text-amber-700">{stats.moduleCount}</span>
+                                    </div>
+                                </div>
+                            </DashboardSurface>
+                        </div>
                     }
                 />
 
-                <DashboardToolbar>
-                    <div className="flex flex-wrap items-center gap-3">
-                        <DashboardBadge>
-                            {stats.roleCount} {stats.roleCount === 1 ? 'role' : 'roles'} across {stats.moduleCount} {stats.moduleCount === 1 ? 'module' : 'modules'}
-                        </DashboardBadge>
-                        <DashboardBadge className="bg-white/85">
-                            {stats.permissionCount} permission {stats.permissionCount === 1 ? 'column' : 'columns'}
-                        </DashboardBadge>
-                    </div>
+                {!showDocumentation ? (
+                    <DashboardToolbar>
+                        <div className="flex flex-wrap items-center gap-3">
+                            <DashboardBadge>
+                                {stats.roleCount} {stats.roleCount === 1 ? 'role' : 'roles'} across {stats.moduleCount} {stats.moduleCount === 1 ? 'module' : 'modules'}
+                            </DashboardBadge>
+                            <DashboardBadge className="bg-white/85">
+                                {stats.permissionCount} permission {stats.permissionCount === 1 ? 'column' : 'columns'}
+                            </DashboardBadge>
+                        </div>
 
-                    <div className="flex flex-wrap items-center gap-3">
-                        <DashboardBadge>
-                            Matrix ready
-                        </DashboardBadge>
-                        <Button
-                            className="rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700"
-                            onClick={openCreateRoleModal}
-                        >
-                            <ShieldPlus className="h-4 w-4" />
-                            Add Role
-                        </Button>
-                    </div>
-                </DashboardToolbar>
+                        <div className="flex flex-wrap items-center gap-3">
+                            <DashboardBadge>
+                                Matrix ready
+                            </DashboardBadge>
+                            <Button
+                                className="rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700"
+                                onClick={openCreateRoleModal}
+                            >
+                                <ShieldPlus className="h-4 w-4" />
+                                Add Role
+                            </Button>
+                            <Button
+                                variant="outline"
+                                className="rounded-2xl border-slate-300 bg-white/85 text-slate-700 hover:bg-slate-100"
+                                onClick={() => openPermissionModal()}
+                            >
+                                <Plus className="h-4 w-4" />
+                                Add Permission
+                            </Button>
+                        </div>
+                    </DashboardToolbar>
+                ) : (
+                    <DashboardToolbar>
+                        <div className="flex flex-wrap items-center gap-3">
+                            <DashboardBadge tone="blue">Documentation open</DashboardBadge>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3">
+                            <DashboardBadge tone="slate">Roles hidden</DashboardBadge>
+                        </div>
+                    </DashboardToolbar>
+                )}
 
                 {error ? (
                     <DashboardNotice className="mb-6">{error}</DashboardNotice>
                 ) : null}
 
-                <div className="grid gap-6 xl:grid-cols-2">
-                    {modules.map((module) => (
-                        <section
-                            key={module.id}
-                            className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/70 shadow-[0_12px_34px_rgba(15,23,42,0.05)] backdrop-blur"
-                        >
-                            <div className="flex flex-col gap-3 px-5 py-5 md:flex-row md:items-center md:justify-between">
-                                <div className="flex items-center gap-3">
-                                    <button
-                                        type="button"
-                                        className={cn(
-                                            'flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition',
-                                            collapsedModules[module.id]
-                                                ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                                                : 'border-slate-300 bg-slate-900 text-white hover:bg-slate-800'
-                                        )}
-                                        onClick={() => toggleModuleCollapse(module.id)}
-                                        aria-expanded={!collapsedModules[module.id]}
-                                        aria-controls={`module-table-${module.id}`}
-                                        aria-label={`${collapsedModules[module.id] ? 'Expand' : 'Collapse'} ${module.name}`}
-                                    >
-                                        {collapsedModules[module.id] ? <Plus className="h-5 w-5" /> : <Minus className="h-5 w-5" />}
-                                    </button>
-                                    <div>
-                                        <h2 className="text-base font-semibold text-slate-950">{module.name}</h2>
-                                        <p className="text-sm text-slate-500">
-                                            {collapsedModules[module.id]
-                                                ? 'Card minimized. Expand to review and edit role permissions.'
-                                                : 'Permissions arranged as role cards instead of a table grid.'}
-                                        </p>
+                <div hidden={showDocumentation} className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+                        {roles.map((role, roleIndex) => (
+                            <section
+                                key={role.id}
+                                className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/70 shadow-[0_12px_34px_rgba(15,23,42,0.05)] backdrop-blur"
+                            >
+                                <div className="flex items-start justify-between gap-3 px-5 py-5">
+                                    <div className="flex items-center gap-3">
+                                        <span
+                                            className={cn('inline-block h-3.5 w-3.5 rounded-full', role.dotClass)}
+                                            style={{ backgroundColor: role.color }}
+                                        />
+                                        <div>
+                                            <h2 className="text-base font-semibold text-slate-950">{role.name}</h2>
+                                            <p className="text-sm text-slate-500">
+                                                {role.description || (role.persisted ? role.sourceStatus : 'local matrix state')}
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <DashboardBadge className="py-1 text-xs font-semibold">
-                                        {roles.length} roles / {module.permissions.length} permissions
-                                    </DashboardBadge>
-                                    <button
-                                        type="button"
-                                        className="inline-flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-600 hover:text-white"
-                                        onClick={() => openPermissionModal(module.id)}
-                                    >
-                                        <Plus className="h-3.5 w-3.5" />
-                                        Add Permission
-                                    </button>
-                                </div>
-                            </div>
 
-                            <div
-                                id={`module-table-${module.id}`}
-                                hidden={!!collapsedModules[module.id]}
-                                className="border-t border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.05)]"
-                            >
-                                <div className="mb-4 flex flex-wrap gap-3">
-                                    {module.permissions.map((permission, permIndex) => (
-                                        <div
-                                            key={`${module.id}-${permission}`}
-                                            className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3"
+                                <div className="border-t border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
+                                    <div className="grid gap-3 sm:grid-cols-2">
+                                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                                            <div className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-500">Users</div>
+                                            <div className="mt-1 text-2xl font-semibold text-slate-900">{getRoleUserCount(role)}</div>
+                                            <div className="mt-1 text-xs text-slate-500">Assigned to this role</div>
+                                        </div>
+                                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                                            <div className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-500">Permissions</div>
+                                            <div className="mt-1 text-2xl font-semibold text-slate-900">{getRolePermissionCount(role)}</div>
+                                            <div className="mt-1 text-xs text-slate-500">Enabled for this role</div>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-4 flex items-center justify-between gap-3">
+                                        <Button
+                                            variant="outline"
+                                            className="rounded-2xl border-slate-300 bg-white/85 text-slate-700 hover:bg-slate-100"
+                                            onClick={() => openRoleDetails(role.id)}
                                         >
-                                            <div className="min-w-0">
-                                                <div className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-500">Permission</div>
-                                                <div className="mt-1 text-sm font-semibold text-slate-800">{permission}</div>
-                                            </div>
+                                            View permissions
+                                        </Button>
+                                        <div className="flex items-center gap-2">
                                             <button
                                                 type="button"
-                                                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-500 transition hover:bg-red-500 hover:text-white"
-                                                onClick={() => removePermission(module.id, permIndex)}
-                                                aria-label={`Remove ${permission}`}
+                                                className="rounded-xl bg-slate-100 px-2.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200"
+                                                onClick={() => openEditRoleModal(role)}
                                             >
-                                                <X className="h-3.5 w-3.5" />
+                                                <Pencil className="h-3.5 w-3.5" />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="rounded-xl bg-red-50 px-2.5 py-2 text-xs font-semibold text-red-600 hover:bg-red-100 disabled:opacity-60"
+                                                onClick={() => void removeRole(roleIndex)}
+                                                disabled={updatingRoleId === role.id}
+                                            >
+                                                <Trash2 className="h-3.5 w-3.5" />
                                             </button>
                                         </div>
-                                    ))}
+                                    </div>
                                 </div>
-
-                                <div className="grid gap-4 md:grid-cols-2">
-                                    {roles.map((role, roleIndex) => (
-                                        <article
-                                            key={role.id}
-                                            className="group rounded-[24px] border border-slate-200 bg-white/90 p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(15,23,42,0.08)]"
-                                        >
-                                            <div className="flex items-start justify-between gap-3">
-                                                <div className="flex items-center gap-3">
-                                                    <span
-                                                        className={cn('inline-block h-3 w-3 rounded-full', role.dotClass)}
-                                                        style={{ backgroundColor: role.color }}
-                                                    />
-                                                    <div>
-                                                        <div className="text-sm font-semibold text-slate-900">{role.name}</div>
-                                                        <div className="mt-1 text-xs text-slate-500">
-                                                            {role.persisted ? role.sourceStatus : 'local matrix state'}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-2 opacity-100 transition md:opacity-0 md:group-hover:opacity-100">
-                                                    <button
-                                                        type="button"
-                                                        className="rounded-xl bg-slate-100 px-2.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200"
-                                                        onClick={() => openEditRoleModal(role)}
-                                                    >
-                                                        <Pencil className="h-3.5 w-3.5" />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="rounded-xl bg-red-50 px-2.5 py-2 text-xs font-semibold text-red-600 hover:bg-red-100 disabled:opacity-60"
-                                                        onClick={() => void removeRole(roleIndex)}
-                                                        disabled={updatingRoleId === role.id}
-                                                    >
-                                                        <Trash2 className="h-3.5 w-3.5" />
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                                                {module.permissions.map((permission, permIndex) => {
-                                                    const checked = !!role.perms[module.id]?.[permIndex];
-                                                    return (
-                                                        <div
-                                                            key={`${role.id}-${module.id}-${permIndex}`}
-                                                            className={cn(
-                                                                'flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 transition',
-                                                                checked
-                                                                    ? 'border-emerald-200 bg-emerald-50/80'
-                                                                    : 'border-slate-200 bg-slate-50'
-                                                            )}
-                                                        >
-                                                            <div className="min-w-0">
-                                                                <div className="text-sm font-semibold text-slate-800">{permission}</div>
-                                                                <div className="mt-1 text-xs text-slate-500">
-                                                                    {checked ? 'Granted for this role' : 'Not granted'}
-                                                                </div>
-                                                            </div>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => togglePermission(roleIndex, module.id, permIndex)}
-                                                                disabled={updatingRoleId === role.id}
-                                                                className={cn(
-                                                                    'flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border-2 transition disabled:cursor-not-allowed disabled:opacity-60',
-                                                                    checked
-                                                                        ? 'border-emerald-500 bg-emerald-500 text-white'
-                                                                        : 'border-slate-300 bg-white text-transparent hover:border-emerald-500'
-                                                                )}
-                                                                aria-pressed={checked}
-                                                                aria-label={`${checked ? 'Revoke' : 'Grant'} ${permission} for ${role.name}`}
-                                                            >
-                                                                <span className="h-3 w-1.5 rotate-45 border-b-2 border-r-2 border-current" />
-                                                            </button>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </article>
-                                    ))}
-                                </div>
-                            </div>
-                        </section>
-                    ))}
+                            </section>
+                        ))}
                 </div>
 
-                <DashboardSurface className="mt-8">
-                    <div className="flex items-start justify-between gap-4">
-                        <div>
-                            <h3 className="text-lg font-semibold text-slate-950">Integration notes</h3>
-                            <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
-                                Role creation is persisted through the backend. Matrix toggles and inline permission-column changes are currently local to this view until matching role-permission update endpoints are wired to this interaction model.
-                            </p>
+                <div hidden={!showDocumentation}>
+                    <DashboardSurface className="mt-1">
+                        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                            <div>
+                                <h3 className="text-lg font-semibold text-slate-950">Integration notes</h3>
+                                <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
+                                    Role creation is persisted through the backend. Matrix toggles and inline permission-column changes are currently local to this view until matching role-permission update endpoints are wired to this interaction model.
+                                </p>
+                            </div>
+                            <div className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                                Replacement view active
+                            </div>
                         </div>
-                        <div className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                            Replacement view active
-                        </div>
-                    </div>
-                    <pre className="mt-5 max-h-[320px] overflow-auto rounded-[18px] bg-slate-950 p-4 text-xs leading-6 text-cyan-100">
-                        {JSON.stringify(rawPayload, null, 2)}
-                    </pre>
-                </DashboardSurface>
+                        <pre className="mt-5 max-h-[320px] overflow-auto rounded-[18px] bg-slate-950 p-4 text-xs leading-6 text-cyan-100">
+                            {JSON.stringify(rawPayload, null, 2)}
+                        </pre>
+                    </DashboardSurface>
+                </div>
             </DashboardContent>
 
             {showRoleModal ? (
@@ -797,6 +823,16 @@ export default function RolesPage() {
                                     value={roleForm.name}
                                     onChange={(event) => setRoleForm((current) => ({ ...current, name: event.target.value }))}
                                     placeholder="e.g. Content Editor"
+                                    className="w-full rounded-xl border-2 border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="mb-2 block text-sm font-semibold text-slate-800">Description</label>
+                                <input
+                                    value={roleForm.description}
+                                    onChange={(event) => setRoleForm((current) => ({ ...current, description: event.target.value }))}
+                                    placeholder="e.g. Manages content approvals and publishing"
                                     className="w-full rounded-xl border-2 border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500"
                                 />
                             </div>
@@ -836,22 +872,117 @@ export default function RolesPage() {
                 </DashboardModalFrame>
             ) : null}
 
+            {selectedRole ? (
+                <div className="fixed inset-0 z-[70]">
+                    <button
+                        type="button"
+                        ref={drawerOverlayRef}
+                        className="absolute inset-0 bg-slate-950/22 backdrop-blur-[3px]"
+                        onClick={closeRoleDetails}
+                        aria-label="Close role permissions"
+                    />
+                    <aside ref={drawerPanelRef} className="absolute right-0 top-0 h-full w-full md:w-[80vw] overflow-y-auto border-l border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98))] text-slate-900 shadow-[-24px_0_80px_rgba(15,23,42,0.18)]">
+                        <div className="sticky top-0 z-10 border-b border-slate-200/80 bg-white/90 px-6 py-5 backdrop-blur-xl">
+                            <div className="flex items-start justify-between gap-4">
+                                <div>
+                                    <div className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">Role Permissions</div>
+                                    <h2 className="mt-2 text-2xl font-semibold text-slate-950">{selectedRole.name}</h2>
+                                    <p className="mt-1 text-sm text-slate-500">
+                                        Review each permission and toggle access from this right-side control panel.
+                                    </p>
+                                </div>
+                                <button
+                                    type="button"
+                                    className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+                                    onClick={closeRoleDetails}
+                                    aria-label="Close role details"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="grid gap-5 p-6 xl:grid-cols-3">
+                            {modules.map((module) => (
+                                <section key={`${selectedRole.id}-${module.id}`} className="rounded-[24px] border border-slate-200/80 bg-white/88 p-4 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
+                                    <div className="mb-4 flex items-center justify-between gap-3">
+                                        <div>
+                                            <h3 className="text-base font-semibold text-slate-950">{module.name}</h3>
+                                            <p className="text-sm text-slate-500">{module.permissions.length} permissions in this module</p>
+                                        </div>
+                                        <DashboardBadge className="bg-slate-100 text-slate-700">
+                                            {(selectedRole.perms[module.id] || []).filter(Boolean).length} active
+                                        </DashboardBadge>
+                                    </div>
+
+                                    <div className="grid gap-3">
+                                        {module.permissions.map((permission, permIndex) => {
+                                            const checked = !!selectedRole.perms[module.id]?.[permIndex];
+                                            const roleIndex = roles.findIndex((role) => role.id === selectedRole.id);
+                                            return (
+                                                <div
+                                                    key={`${selectedRole.id}-${module.id}-${permIndex}`}
+                                                    className={cn(
+                                                        'flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 transition',
+                                                        checked
+                                                            ? 'border-slate-300 bg-slate-100'
+                                                            : 'border-slate-200 bg-slate-50'
+                                                    )}
+                                                >
+                                                    <div className="min-w-0">
+                                                        <div className="text-sm font-semibold text-slate-900">{permission}</div>
+                                                        <div className="mt-1 text-xs text-slate-500">
+                                                            {checked ? 'Active for this role' : 'Inactive for this role'}
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => togglePermission(roleIndex, module.id, permIndex)}
+                                                        disabled={updatingRoleId === selectedRole.id}
+                                                        className={cn(
+                                                            'flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border-2 disabled:cursor-not-allowed disabled:opacity-60',
+                                                            checked
+                                                                ? 'border-emerald-500 bg-emerald-500 text-white'
+                                                                : 'border-slate-300 bg-white text-transparent hover:border-slate-500'
+                                                        )}
+                                                        aria-pressed={checked}
+                                                        aria-label={`${checked ? 'Revoke' : 'Grant'} ${permission} for ${selectedRole.name}`}
+                                                    >
+                                                        <span className="h-3 w-1.5 rotate-45 border-b-2 border-r-2 border-current" />
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </section>
+                            ))}
+                        </div>
+                    </aside>
+                </div>
+            ) : null}
+
             {showPermModal && selectedModuleId ? (
                 <DashboardModalFrame width="max-w-md">
                     <div className="w-full rounded-[20px] bg-white p-6">
                         <div className="mb-6">
                             <h2 className="text-xl font-semibold text-slate-950">Add New Permission</h2>
-                            <p className="mt-1 text-sm text-slate-500">Add a new permission column to this module in the current UI session.</p>
+                            <p className="mt-1 text-sm text-slate-500">Create a new permission and add it to the system inactive for every role.</p>
                         </div>
 
                         <div className="space-y-5">
                             <div>
                                 <label className="mb-2 block text-sm font-semibold text-slate-800">Module</label>
-                                <input
-                                    readOnly
-                                    value={summarizeModuleName(selectedModuleId)}
-                                    className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none"
-                                />
+                                <select
+                                    value={selectedModuleId}
+                                    onChange={(event) => setSelectedModuleId(event.target.value)}
+                                    className="w-full rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-emerald-500"
+                                >
+                                    {modules.map((module) => (
+                                        <option key={module.id} value={module.id}>
+                                            {module.name}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
 
                             <div>
