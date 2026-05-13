@@ -10,7 +10,7 @@ export default function TopBar({
     onRightMenuClick: () => void;
 }) {
     return (
-        <header className="sticky top-0 z-30 flex h-16 w-full shrink-0 items-center justify-between border-b border-border bg-background/95 px-4 shadow-sm backdrop-blur lg:mr-[2.6rem] lg:w-[calc(100%-2.6rem)] lg:px-6">
+        <header className="sticky top-0 z-30 flex h-16 w-full shrink-0 items-center justify-between border-b border-border bg-background/95 px-4 shadow-sm backdrop-blur lg:hidden">
             <div className="flex items-center gap-4">
                 <button
                     onClick={onMenuClick}

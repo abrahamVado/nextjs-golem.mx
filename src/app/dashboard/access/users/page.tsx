@@ -70,6 +70,7 @@ export default function UsersPage() {
     const [error, setError] = useState<string | null>(null);
     const [toast, setToast] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showDocumentation, setShowDocumentation] = useState(false);
     const [editingUser, setEditingUser] = useState<DisplayUser | null>(null);
     const [deletingUser, setDeletingUser] = useState<DisplayUser | null>(null);
     const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
@@ -244,93 +245,128 @@ export default function UsersPage() {
                     title="User management that feels like a real control room"
                     description="Review workspace people, filter access signals, and create users from a richer operating surface while staying grounded in the current backend contract."
                     right={
-                        <DashboardSurface className="border-slate-200/80 bg-white/75 p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
-                            <div className="mb-3 text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">System health</div>
-                            <div className="grid gap-3 sm:grid-cols-2">
-                                <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
-                                    <span className="text-sm font-semibold text-slate-900">User feed</span>
-                                    <span className="inline-flex items-center gap-2 text-xs font-extrabold text-emerald-700">
-                                        <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                                        Live
-                                    </span>
-                                </div>
-                                <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
-                                    <span className="text-sm font-semibold text-slate-900">Operator</span>
-                                    <span className="text-xs font-extrabold text-slate-600">{me?.user_id?.slice(0, 8) || 'n/a'}</span>
-                                </div>
-                                <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
-                                    <span className="text-sm font-semibold text-slate-900">Tenant</span>
-                                    <span className="text-xs font-extrabold text-slate-600">{usersInfo?.company_id?.slice(0, 8) || 'n/a'}</span>
-                                </div>
-                                <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
-                                    <span className="text-sm font-semibold text-slate-900">Total users</span>
-                                    <span className="text-xs font-extrabold text-slate-600">{stats.total}</span>
-                                </div>
-                                <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
-                                    <span className="text-sm font-semibold text-slate-900">Active users</span>
-                                    <span className="text-xs font-extrabold text-emerald-700">{stats.active}</span>
-                                </div>
-                                <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
-                                    <span className="text-sm font-semibold text-slate-900">Inactive users</span>
-                                    <span className="text-xs font-extrabold text-amber-700">{stats.inactive}</span>
-                                </div>
-                                <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
-                                    <span className="text-sm font-semibold text-slate-900">Admins</span>
-                                    <span className="text-xs font-extrabold text-violet-700">{stats.admins}</span>
-                                </div>
+                        <div className="space-y-4">
+                            <div className="flex flex-wrap items-center gap-3">
+                                <Button
+                                    className={cn(
+                                        'rounded-2xl px-5 text-sm',
+                                        showDocumentation
+                                            ? 'bg-slate-900 text-white hover:bg-slate-800'
+                                            : 'bg-white text-slate-900 hover:bg-slate-100'
+                                    )}
+                                    onClick={() => setShowDocumentation(true)}
+                                >
+                                    Documentation
+                                </Button>
+                                {showDocumentation ? (
+                                    <Button
+                                        variant="outline"
+                                        className="rounded-2xl border-slate-300 bg-white/80 text-slate-700 hover:bg-slate-100"
+                                        onClick={() => setShowDocumentation(false)}
+                                    >
+                                        Back to users
+                                    </Button>
+                                ) : null}
                             </div>
-                        </DashboardSurface>
+                            <DashboardSurface className="border-slate-200/80 bg-white/75 p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+                                <div className="mb-3 text-[11px] font-extrabold uppercase tracking-[0.18em] text-slate-500">System health</div>
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                    <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                                        <span className="text-sm font-semibold text-slate-900">User feed</span>
+                                        <span className="inline-flex items-center gap-2 text-xs font-extrabold text-emerald-700">
+                                            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                                            Live
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                                        <span className="text-sm font-semibold text-slate-900">Operator</span>
+                                        <span className="text-xs font-extrabold text-slate-600">{me?.user_id?.slice(0, 8) || 'n/a'}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                                        <span className="text-sm font-semibold text-slate-900">Tenant</span>
+                                        <span className="text-xs font-extrabold text-slate-600">{usersInfo?.company_id?.slice(0, 8) || 'n/a'}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                                        <span className="text-sm font-semibold text-slate-900">Total users</span>
+                                        <span className="text-xs font-extrabold text-slate-600">{stats.total}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                                        <span className="text-sm font-semibold text-slate-900">Active users</span>
+                                        <span className="text-xs font-extrabold text-emerald-700">{stats.active}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                                        <span className="text-sm font-semibold text-slate-900">Inactive users</span>
+                                        <span className="text-xs font-extrabold text-amber-700">{stats.inactive}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                                        <span className="text-sm font-semibold text-slate-900">Admins</span>
+                                        <span className="text-xs font-extrabold text-violet-700">{stats.admins}</span>
+                                    </div>
+                                </div>
+                            </DashboardSurface>
+                        </div>
                     }
                 />
 
-                <DashboardToolbar>
-                    <div className="flex flex-wrap items-center gap-3">
-                        <div className="relative min-w-[260px] flex-1">
-                            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                            <input
-                                value={search}
-                                onChange={(event) => setSearch(event.target.value)}
-                                placeholder="Search names, emails, roles, departments, or payload fields"
-                                className="min-h-11 w-full rounded-2xl border border-slate-300 bg-white/90 py-3 pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:shadow-[0_0_0_5px_rgba(16,185,129,0.12)]"
-                            />
+                {!showDocumentation ? (
+                    <DashboardToolbar>
+                        <div className="flex flex-wrap items-center gap-3">
+                            <div className="relative min-w-[260px] flex-1">
+                                <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                                <input
+                                    value={search}
+                                    onChange={(event) => setSearch(event.target.value)}
+                                    placeholder="Search names, emails, roles, departments, or payload fields"
+                                    className="min-h-11 w-full rounded-2xl border border-slate-300 bg-white/90 py-3 pl-11 pr-4 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:shadow-[0_0_0_5px_rgba(16,185,129,0.12)]"
+                                />
+                            </div>
+                            <select
+                                value={roleFilter}
+                                onChange={(event) => setRoleFilter(event.target.value)}
+                                className="min-h-11 rounded-2xl border border-slate-300 bg-white/90 px-4 text-sm text-slate-900 outline-none transition focus:border-emerald-400"
+                            >
+                                <option value="">All roles</option>
+                                {[...new Set(users.map((user) => user.role))].map((role) => (
+                                    <option key={role} value={role}>{role}</option>
+                                ))}
+                            </select>
+                            <select
+                                value={statusFilter}
+                                onChange={(event) => setStatusFilter(event.target.value)}
+                                className="min-h-11 rounded-2xl border border-slate-300 bg-white/90 px-4 text-sm text-slate-900 outline-none transition focus:border-emerald-400"
+                            >
+                                <option value="">All statuses</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
                         </div>
-                        <select
-                            value={roleFilter}
-                            onChange={(event) => setRoleFilter(event.target.value)}
-                            className="min-h-11 rounded-2xl border border-slate-300 bg-white/90 px-4 text-sm text-slate-900 outline-none transition focus:border-emerald-400"
-                        >
-                            <option value="">All roles</option>
-                            {[...new Set(users.map((user) => user.role))].map((role) => (
-                                <option key={role} value={role}>{role}</option>
-                            ))}
-                        </select>
-                        <select
-                            value={statusFilter}
-                            onChange={(event) => setStatusFilter(event.target.value)}
-                            className="min-h-11 rounded-2xl border border-slate-300 bg-white/90 px-4 text-sm text-slate-900 outline-none transition focus:border-emerald-400"
-                        >
-                            <option value="">All statuses</option>
-                            <option value="active">Active</option>
-                            <option value="inactive">Inactive</option>
-                        </select>
-                    </div>
 
-                    <div className="flex flex-wrap items-center gap-3">
-                        <DashboardBadge>
-                            {filteredUsers.length} {filteredUsers.length === 1 ? 'result' : 'results'}
-                        </DashboardBadge>
-                        <Button className="rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700" onClick={openCreateModal}>
-                            <Plus className="h-4 w-4" />
-                            Add User
-                        </Button>
-                    </div>
-                </DashboardToolbar>
+                        <div className="flex flex-wrap items-center gap-3">
+                            <DashboardBadge>
+                                {filteredUsers.length} {filteredUsers.length === 1 ? 'result' : 'results'}
+                            </DashboardBadge>
+                            <Button className="rounded-2xl bg-emerald-600 text-white hover:bg-emerald-700" onClick={openCreateModal}>
+                                <Plus className="h-4 w-4" />
+                                Add User
+                            </Button>
+                        </div>
+                    </DashboardToolbar>
+                ) : (
+                    <DashboardToolbar>
+                        <div className="flex flex-wrap items-center gap-3">
+                            <DashboardBadge tone="blue">Documentation open</DashboardBadge>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3">
+                            <DashboardBadge tone="slate">Users hidden</DashboardBadge>
+                        </div>
+                    </DashboardToolbar>
+                )}
 
                 {error ? (
                     <DashboardNotice>{error}</DashboardNotice>
                 ) : null}
 
-                <DashboardSurface className="overflow-hidden rounded-[28px] p-0 shadow-[0_18px_50px_rgba(15,23,42,0.12)]">
+                <DashboardSurface hidden={showDocumentation} className="overflow-hidden rounded-[28px] p-0 shadow-[0_18px_50px_rgba(15,23,42,0.12)]">
                     <DashboardSectionHeading
                         title="Workspace people"
                         description="A cleaner, more operational table generated from live backend user records."
@@ -498,7 +534,7 @@ export default function UsersPage() {
                     )}
                 </DashboardSurface>
 
-                <DashboardSurface>
+                <DashboardSurface hidden={!showDocumentation}>
                     <div className="flex items-start justify-between gap-4">
                         <div>
                             <h3 className="text-lg font-semibold text-slate-950">Implementation notes</h3>

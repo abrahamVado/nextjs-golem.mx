@@ -101,8 +101,8 @@ export default function LoginPage() {
                                 <span>ES</span>
                             </button>
                         </div>
-                        <Link href="/#contacto" className="text-sm font-semibold text-slate-700 transition hover:text-slate-950">
-                            {locale === "es" ? "Unete a la whitelist" : "Join the whitelist"}
+                        <Link href="/register" className="text-sm font-semibold text-slate-700 transition hover:text-slate-950">
+                            {locale === "es" ? "Crear cuenta" : "Create account"}
                         </Link>
                     </div>
                 </header>
@@ -182,9 +182,9 @@ export default function LoginPage() {
 
                             <div className="mt-6 text-center text-sm sm:text-left">
                                 <p className="text-slate-500">
-                                    {locale === "es" ? "Aun no tienes acceso?" : "Need access?"}{" "}
-                                    <Link href="/#contacto" className="font-semibold text-slate-900 hover:text-slate-700">
-                                        {locale === "es" ? "Solicita la whitelist" : "Request whitelist access"}
+                                    {locale === "es" ? "Aun no tienes cuenta?" : "Need an account?"}{" "}
+                                    <Link href="/register" className="font-semibold text-slate-900 hover:text-slate-700">
+                                        {locale === "es" ? "Registrate" : "Register"}
                                     </Link>
                                 </p>
                                 <p className="mt-2">

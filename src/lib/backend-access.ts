@@ -4,6 +4,18 @@ export type BackendMe = {
     user_id: string;
     company_id: string;
     branch_id?: string | null;
+    name?: string;
+    email?: string;
+    role?: string;
+    avatar_url?: string;
+    account_type?: string;
+    is_premium?: boolean;
+    is_blocked?: boolean;
+    premium_days_remaining?: number;
+    free_days_remaining?: number;
+    premium_expires_at?: string | null;
+    free_expires_at?: string | null;
+    blocked_at?: string | null;
 };
 
 export type BackendListEnvelope = {

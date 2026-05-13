@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "../ui/Button";
 import { useUI } from "@/components/providers/ui-provider";
 import { DashboardModalFrame } from "./dashboard-visuals";
+import { useAuth } from "@/context/AuthContext";
 
 type ProjectItem = {
     id: string;
@@ -64,6 +65,7 @@ function truncateLabel(value: string, max = 26) {
 }
 
 export default function ProjectNavigatorSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+    const { user } = useAuth();
     const pathname = usePathname();
     const router = useRouter();
     const { settings, updateSettings } = useUI();
@@ -77,6 +79,7 @@ export default function ProjectNavigatorSidebar({ isOpen, onClose }: { isOpen: b
     const [form, setForm] = useState({ name: "", description: "", icon: "", sprintSize: "", sprintStartDate: "" });
     const [selectedMembers, setSelectedMembers] = useState<Record<string, "admin" | "member">>({});
     const [saving, setSaving] = useState(false);
+    const isPremiumAccount = Boolean(user?.is_premium);
 
     useEffect(() => {
         let active = true;
@@ -145,6 +148,10 @@ export default function ProjectNavigatorSidebar({ isOpen, onClose }: { isOpen: b
     };
 
     const openCreateProject = () => {
+        if (!isPremiumAccount) {
+            setError("Project creation is available only for premium, founder, and owner accounts.");
+            return;
+        }
         setCreatingProject(true);
         setEditingProject(null);
         setForm({ name: "", description: "", icon: "", sprintSize: "", sprintStartDate: "" });
@@ -366,12 +373,19 @@ export default function ProjectNavigatorSidebar({ isOpen, onClose }: { isOpen: b
                                     <button
                                         type="button"
                                         onClick={openCreateProject}
+                                        disabled={!isPremiumAccount}
                                         className="rounded-md p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
                                         aria-label="Create project"
+                                        title={isPremiumAccount ? "Create project" : "Premium required"}
                                     >
                                         <Plus className="h-4 w-4" />
                                     </button>
                                 </div>
+                                {!isPremiumAccount ? (
+                                    <div className="px-3 pt-1 text-xs font-medium text-amber-700">
+                                        Premium is required to create projects and invite teams.
+                                    </div>
+                                ) : null}
                                 {visibleProjects.map((project) => renderProjectRow(project))}
                             </div>
                         </div>

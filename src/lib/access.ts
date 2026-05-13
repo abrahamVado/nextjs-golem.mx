@@ -8,6 +8,7 @@ const CLIENT_ALLOWED_PREFIXES = [
     "/dashboard/tickets",
     "/dashboard/projects",
     "/dashboard/teams",
+    "/dashboard/access",
     "/dashboard/settings",
 ];
 

@@ -8,6 +8,7 @@ import { getErrorMessage } from '@/lib/errors';
 import { ensureGSAP } from '@/lib/gsap';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
 
 type RawRecord = Record<string, unknown>;
 
@@ -221,6 +222,7 @@ function getRolePermissionCount(role: MatrixRole) {
 }
 
 export default function RolesPage() {
+    const { user } = useAuth();
     const [showDocumentation, setShowDocumentation] = useState(false);
     const [rolesInfo, setRolesInfo] = useState<{ company_id: string; module: string; items: RawRecord[] } | null>(null);
     const [permissionsInfo, setPermissionsInfo] = useState<{ company_id: string; module: string; items: RawRecord[] } | null>(null);
@@ -251,6 +253,7 @@ export default function RolesPage() {
             moduleCount: modules.length,
         };
     }, [modules, roles]);
+    const isPremiumAccount = Boolean(user?.is_premium);
 
     const selectedRole = useMemo(
         () => roles.find((role) => role.id === selectedRoleId) || null,
@@ -358,6 +361,10 @@ export default function RolesPage() {
     }, []);
 
     const openPermissionModal = (moduleId?: string) => {
+        if (!isPremiumAccount) {
+            setToast('Premium is required to create permissions');
+            return;
+        }
         setSelectedModuleId(moduleId || modules[0]?.id || null);
         setPermissionName('');
         setShowPermModal(true);
@@ -408,6 +415,10 @@ export default function RolesPage() {
     };
 
     const removeRole = async (index: number) => {
+        if (!isPremiumAccount) {
+            setToast('Premium is required to delete roles');
+            return;
+        }
         const target = roles[index];
         if (!target) return;
 
@@ -428,6 +439,10 @@ export default function RolesPage() {
     };
 
     const openEditRoleModal = (role: MatrixRole) => {
+        if (!isPremiumAccount) {
+            setToast('Premium is required to edit roles');
+            return;
+        }
         setRoleForm({
             id: role.id,
             name: role.name,
@@ -439,6 +454,10 @@ export default function RolesPage() {
     };
 
     const openCreateRoleModal = () => {
+        if (!isPremiumAccount) {
+            setToast('Premium is required to create roles');
+            return;
+        }
         setRoleForm({ id: '', name: '', description: '', color: ROLE_COLORS[0], mode: 'create' });
         setShowRoleModal(true);
     };
@@ -726,25 +745,25 @@ export default function RolesPage() {
                         {roles.map((role, roleIndex) => (
                             <section
                                 key={role.id}
-                                className="overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/70 shadow-[0_12px_34px_rgba(15,23,42,0.05)] backdrop-blur"
+                                className="flex h-full flex-col overflow-hidden rounded-[28px] border border-slate-200/80 bg-white/70 shadow-[0_12px_34px_rgba(15,23,42,0.05)] backdrop-blur"
                             >
                                 <div className="flex items-start justify-between gap-3 px-5 py-5">
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex min-w-0 items-start gap-3">
                                         <span
-                                            className={cn('inline-block h-3.5 w-3.5 rounded-full', role.dotClass)}
+                                            className={cn('mt-1 inline-block h-3.5 w-3.5 shrink-0 rounded-full', role.dotClass)}
                                             style={{ backgroundColor: role.color }}
                                         />
-                                        <div>
-                                            <h2 className="text-base font-semibold text-slate-950">{role.name}</h2>
-                                            <p className="text-sm text-slate-500">
+                                        <div className="min-w-0 min-h-[72px]">
+                                            <h2 className="line-clamp-1 text-base font-semibold text-slate-950">{role.name}</h2>
+                                            <p className="mt-1 line-clamp-2 text-sm leading-5 text-slate-500">
                                                 {role.description || (role.persisted ? role.sourceStatus : 'local matrix state')}
                                             </p>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="border-t border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
-                                    <div className="grid gap-3 sm:grid-cols-2">
+                                <div className="flex flex-1 flex-col border-t border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.05)]">
+                                    <div className="grid gap-3">
                                         <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                                             <div className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-slate-500">Users</div>
                                             <div className="mt-1 text-2xl font-semibold text-slate-900">{getRoleUserCount(role)}</div>

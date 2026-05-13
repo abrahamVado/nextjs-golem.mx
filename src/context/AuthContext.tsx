@@ -23,6 +23,14 @@ interface User {
     email_verified_at?: string;
     created_at?: string;
     updated_at?: string;
+    account_type?: string;
+    is_premium?: boolean;
+    is_blocked?: boolean;
+    premium_days_remaining?: number;
+    free_days_remaining?: number;
+    premium_expires_at?: string | null;
+    free_expires_at?: string | null;
+    blocked_at?: string | null;
 }
 
 interface LoginCredentials {
@@ -46,6 +54,14 @@ type MeResponse = {
     email?: string;
     role?: string;
     avatar_url?: string;
+    account_type?: string;
+    is_premium?: boolean;
+    is_blocked?: boolean;
+    premium_days_remaining?: number;
+    free_days_remaining?: number;
+    premium_expires_at?: string | null;
+    free_expires_at?: string | null;
+    blocked_at?: string | null;
 };
 
 interface AuthContextType {
@@ -93,6 +109,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 name: payload.name || payload.user_id,
                 role: payload.role,
                 avatar_url: resolveAssetURL(payload.avatar_url),
+                account_type: payload.account_type,
+                is_premium: payload.is_premium,
+                is_blocked: payload.is_blocked,
+                premium_days_remaining: payload.premium_days_remaining,
+                free_days_remaining: payload.free_days_remaining,
+                premium_expires_at: payload.premium_expires_at,
+                free_expires_at: payload.free_expires_at,
+                blocked_at: payload.blocked_at,
             });
             await refreshSession();
         } catch {

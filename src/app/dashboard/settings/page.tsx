@@ -19,7 +19,30 @@ type MePayload = {
     email?: string;
     role?: string;
     avatar_url?: string;
+    account_type?: string;
+    is_premium?: boolean;
+    is_blocked?: boolean;
+    premium_days_remaining?: number;
+    free_days_remaining?: number;
+    premium_expires_at?: string | null;
+    free_expires_at?: string | null;
+    blocked_at?: string | null;
 };
+
+function formatAccountLabel(value?: string) {
+    switch (value) {
+        case 'owner':
+            return 'Owner';
+        case 'founder':
+            return 'Founder';
+        case 'premium_client':
+            return 'Premium Client';
+        case 'invalid_client':
+            return 'Invalid Client';
+        default:
+            return 'Free Client';
+    }
+}
 
 export default function SettingsPage() {
     const { __ } = useLanguage();
@@ -120,6 +143,11 @@ export default function SettingsPage() {
 
     const avatarSrc = resolveAssetURL(me?.avatar_url || user?.avatar_url);
     const displayName = me?.name || user?.name || 'User';
+    const accountLabel = formatAccountLabel(me?.account_type || user?.account_type);
+    const premiumDays = me?.premium_days_remaining ?? user?.premium_days_remaining ?? 0;
+    const freeDays = me?.free_days_remaining ?? user?.free_days_remaining ?? 0;
+    const isPremium = Boolean(me?.is_premium ?? user?.is_premium);
+    const isBlocked = Boolean(me?.is_blocked ?? user?.is_blocked);
     const initials = displayName
         .split(' ')
         .filter(Boolean)
@@ -180,9 +208,67 @@ export default function SettingsPage() {
                                     <div className="mt-2 break-all text-sm text-gray-900">{me?.company_id || 'Unavailable'}</div>
                                 </div>
                             </div>
+                            <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div>
+                                        <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Account plan</div>
+                                        <div className="mt-2 text-xl font-semibold text-slate-950">{accountLabel}</div>
+                                        <p className="mt-2 text-sm leading-6 text-slate-600">
+                                            {isBlocked
+                                                ? 'This account is blocked because the premium and grace periods ended.'
+                                                : isPremium
+                                                    ? 'Premium actions are enabled for this account.'
+                                                    : 'This account is in free access mode and premium actions are locked.'}
+                                        </p>
+                                    </div>
+                                    <div className={`rounded-full px-3 py-1 text-xs font-semibold ${isBlocked ? 'bg-red-100 text-red-700' : isPremium ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                                        {isBlocked ? 'Blocked' : isPremium ? 'Premium active' : 'Free mode'}
+                                    </div>
+                                </div>
+                                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                                    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                                        <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Premium days</div>
+                                        <div className="mt-1 text-2xl font-semibold text-slate-900">{premiumDays || (accountLabel === 'Owner' || accountLabel === 'Founder' ? '∞' : 0)}</div>
+                                        <div className="mt-1 text-xs text-slate-500">Available before free mode starts</div>
+                                    </div>
+                                    <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                                        <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Free days</div>
+                                        <div className="mt-1 text-2xl font-semibold text-slate-900">{freeDays || (accountLabel === 'Owner' || accountLabel === 'Founder' ? '∞' : 0)}</div>
+                                        <div className="mt-1 text-xs text-slate-500">Grace days after premium access ends</div>
+                                    </div>
+                                </div>
+                            </div>
                         </DashboardSurface>
 
                         <div className="space-y-6">
+                            <DashboardSurface>
+                                <h2 className="text-lg font-semibold text-gray-900">Premium actions</h2>
+                                <div className="mt-6 grid gap-4 md:grid-cols-2">
+                                    <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                                        <div className="text-sm font-semibold text-slate-950">Create companies</div>
+                                        <p className="mt-2 text-sm leading-6 text-slate-600">
+                                            Company creation is reserved for premium accounts. The backend multi-company flow is the next step, and this card keeps the action in the current dashboard style.
+                                        </p>
+                                        <button
+                                            type="button"
+                                            disabled={!isPremium}
+                                            className={`mt-4 inline-flex rounded-2xl px-4 py-2 text-sm font-semibold transition ${isPremium ? 'bg-slate-950 text-white hover:bg-slate-800' : 'cursor-not-allowed bg-slate-200 text-slate-500'}`}
+                                        >
+                                            {isPremium ? 'Premium company creation enabled' : 'Premium required'}
+                                        </button>
+                                    </div>
+                                    <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                                        <div className="text-sm font-semibold text-slate-950">Premium-only actions</div>
+                                        <ul className="mt-3 space-y-2 text-sm text-slate-600">
+                                            <li>Create roles</li>
+                                            <li>Create companies</li>
+                                            <li>Create teams and projects</li>
+                                            <li>Print reports</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </DashboardSurface>
+
                             <DashboardSurface>
                                 <h2 className="text-lg font-semibold text-gray-900">{__('settings.personal_info')}</h2>
                                 <form onSubmit={handleProfileSubmit} className="mt-6 space-y-4">

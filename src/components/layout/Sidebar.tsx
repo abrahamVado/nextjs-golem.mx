@@ -58,7 +58,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
         ...(!clientOnly ? [{
             label: "Kanban", href: "/dashboard/kanban", icon: Columns3
         }] : []),
-        ...(!clientOnly ? [{
+        {
             label: __("nav.access_control"),
             href: "/dashboard/access",
             icon: ShieldAlert,
@@ -66,7 +66,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
                 { label: "Users", href: "/dashboard/access/users", icon: Users },
                 { label: "Roles", href: "/dashboard/access/roles", icon: ShieldAlert },
             ]
-        }] : []),
+        },
         ...(!clientOnly ? [{
             label: "API Security",
             href: "/dashboard/api",

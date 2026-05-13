@@ -5,7 +5,7 @@ import { Maximize2 } from "lucide-react";
 import { dashboardApi } from "@/lib/api";
 import { getErrorMessage } from "@/lib/errors";
 import { useAuth } from "@/context/AuthContext";
-import { DashboardBadge, DashboardCanvas, DashboardContent, DashboardHero, DashboardModalFrame, DashboardNotice, DashboardSurface, useDashboardMotion } from "@/components/layout/dashboard-visuals";
+import { DashboardCanvas, DashboardContent, DashboardHero, DashboardModalFrame, DashboardNotice, DashboardSurface, useDashboardMotion } from "@/components/layout/dashboard-visuals";
 
 type DashboardSummary = {
     company_id: string;
@@ -32,12 +32,6 @@ type SystemLogEntry = {
     severity: "info" | "warn" | "error" | "success" | string;
 };
 
-type WipSlice = {
-    label: string;
-    value: number;
-    color: string;
-};
-
 type FlowSeries = {
     label: string;
     color: string;
@@ -49,15 +43,6 @@ type MemberActivitySeries = {
     label: string;
     color: string;
     points: Array<number | null>;
-};
-
-type ActivityHeatCell = {
-    intensity: number;
-};
-
-type MemberActivityHeatRow = {
-    label: string;
-    cells: ActivityHeatCell[];
 };
 
 function formatPercent(value: number) {
@@ -146,61 +131,6 @@ function SystemLogsTerminal({
                     ))}
                 </div>
             )}
-        </div>
-    );
-}
-
-function WipDistributionChart({ slices }: { slices: WipSlice[] }) {
-    const total = slices.reduce((sum, slice) => sum + slice.value, 0);
-    const circumference = 2 * Math.PI * 52;
-    let offset = 0;
-
-    return (
-        <div className="flex h-full flex-col gap-4">
-            <div className="flex items-center justify-center pt-2">
-                <div className="relative h-[170px] w-[170px]">
-                    <svg viewBox="0 0 140 140" className="h-full w-full -rotate-90">
-                        <circle cx="70" cy="70" r="52" fill="none" stroke="#e2e8f0" strokeWidth="18" />
-                        {total > 0 ? slices.map((slice) => {
-                            const segment = (slice.value / total) * circumference;
-                            const circle = (
-                                <circle
-                                    key={slice.label}
-                                    cx="70"
-                                    cy="70"
-                                    r="52"
-                                    fill="none"
-                                    stroke={slice.color}
-                                    strokeWidth="18"
-                                    strokeDasharray={`${segment} ${circumference - segment}`}
-                                    strokeDashoffset={-offset}
-                                    strokeLinecap="butt"
-                                />
-                            );
-                            offset += segment;
-                            return circle;
-                        }) : null}
-                    </svg>
-                    <div className="absolute inset-0 grid place-items-center text-center font-mono">
-                        <div>
-                            <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500">Total</div>
-                            <div className="mt-1 text-2xl font-bold text-slate-950">{total}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                {slices.map((slice) => (
-                    <div key={slice.label} className="flex items-center justify-between font-mono text-[11px]">
-                        <div className="flex items-center gap-2 text-slate-700">
-                            <span className="h-[10px] w-[10px] rounded-[2px]" style={{ backgroundColor: slice.color }} />
-                            <span>{slice.label}</span>
-                        </div>
-                        <span className="text-slate-500">{slice.value}</span>
-                    </div>
-                ))}
-            </div>
         </div>
     );
 }
@@ -301,103 +231,6 @@ function CumulativeFlowWindow({
                     <div className="font-mono text-[11px] text-slate-400">Loading cumulative flow...</div>
                 ) : (
                     <CumulativeFlowChart series={series} />
-                )}
-            </div>
-        </section>
-    );
-}
-
-function WipWindow({
-    slices,
-    loading,
-}: {
-    slices: WipSlice[];
-    loading: boolean;
-}) {
-    return (
-        <section className="overflow-hidden rounded-[10px] border border-[#d6dbe3] bg-white shadow-[0_4px_20px_rgba(15,23,42,0.12)]">
-            <div className="flex items-center gap-2 border-b border-[#d6dbe3] bg-[#f5f9ff] px-3 py-2">
-                <div className="flex gap-[6px]">
-                    <span className="h-3 w-3 rounded-full bg-[#ef4444]" />
-                    <span className="h-3 w-3 rounded-full bg-[#f59e0b]" />
-                    <span className="h-3 w-3 rounded-full bg-[#22c55e]" />
-                </div>
-                <span className="ml-2 flex-1 truncate font-mono text-[11px] text-slate-500">WIP DISTRIBUTION</span>
-            </div>
-            <div className="px-4 pb-4 pt-3">
-                <div className="pb-2 font-mono text-[11px] text-slate-500">Current work in progress split</div>
-                {loading ? (
-                    <div className="font-mono text-[11px] text-slate-400">Loading WIP distribution...</div>
-                ) : (
-                    <WipDistributionChart slices={slices} />
-                )}
-            </div>
-        </section>
-    );
-}
-
-function ActivityMapWindow({
-    rows,
-    loading,
-}: {
-    rows: MemberActivityHeatRow[];
-    loading: boolean;
-}) {
-    const labels = ["M", "T", "W", "T", "F", "S", "S"];
-    const colorMap = ["#334155", "#86efac", "#22c55e", "#15803d", "#052e16"];
-
-    return (
-        <section className="overflow-hidden rounded-[10px] border border-[#2d3748] bg-[#0a0a0a] shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
-            <div className="flex items-center gap-2 border-b border-[#2d3748] bg-[#1a1a1a] px-3 py-2">
-                <div className="flex gap-[6px]">
-                    <span className="h-3 w-3 rounded-full bg-[#ef4444]" />
-                    <span className="h-3 w-3 rounded-full bg-[#f59e0b]" />
-                    <span className="h-3 w-3 rounded-full bg-[#22c55e]" />
-                </div>
-                <span className="ml-2 flex-1 truncate font-mono text-[11px] text-slate-500">ACTIVITY MAP</span>
-            </div>
-            <div className="px-4 pb-4 pt-3">
-                <div className="pb-2 font-mono text-[11px] text-slate-500">Team activity by member and weekday</div>
-                {loading ? (
-                    <div className="font-mono text-[11px] text-slate-400">Loading activity map...</div>
-                ) : rows.length === 0 ? (
-                    <div className="font-mono text-[11px] text-slate-400">No member activity available yet.</div>
-                ) : (
-                    <div className="space-y-3">
-                        <div className="grid grid-cols-[72px_1fr] items-center gap-x-2">
-                            <span />
-                            <div className="grid grid-cols-7 gap-[2px] font-mono text-[8px] text-slate-500">
-                                {labels.map((label) => (
-                                    <span key={label} className="text-center">{label}</span>
-                                ))}
-                            </div>
-                        </div>
-                        <div>
-                            <div className="grid grid-cols-[72px_1fr] items-center gap-x-2 gap-y-2">
-                                {rows.map((row) => (
-                                    <div key={row.label} className="contents">
-                                        <span className="truncate font-mono text-[8px] leading-none text-slate-400" title={row.label}>
-                                            {row.label}
-                                        </span>
-                                        <div className="grid grid-cols-7 gap-[3px]">
-                                            {row.cells.map((cell, index) => (
-                                                <div
-                                                    key={`${row.label}-${index}`}
-                                                    className="aspect-square w-full rounded-[1px]"
-                                                    style={{ backgroundColor: colorMap[cell.intensity] ?? colorMap[0] }}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        <div className="flex items-center justify-between font-mono text-[8px] text-slate-500">
-                            <span>0</span>
-                            <span>Low</span>
-                            <span>High</span>
-                        </div>
-                    </div>
                 )}
             </div>
         </section>
@@ -539,16 +372,6 @@ export default function DashboardPage() {
         };
     }, [logsOpen]);
 
-    const topStatus = useMemo(() => summary?.task_status?.slice(0, 4) ?? [], [summary]);
-    const wipSlices = useMemo<WipSlice[]>(() => {
-        const counts = new Map((summary?.task_status ?? []).map((status) => [status.key, status.count]));
-        return [
-            { label: "Backlog", value: Number(counts.get("backlog") ?? 0), color: "#f97316" },
-            { label: "In Progress", value: Number(counts.get("in_progress") ?? 0), color: "#3b82f6" },
-            { label: "Review", value: Number(counts.get("in_review") ?? 0), color: "#8b5cf6" },
-            { label: "Blocked", value: 0, color: "#ef4444" },
-        ];
-    }, [summary]);
     const cumulativeFlowSeries = useMemo<MemberActivitySeries[]>(() => {
         const weekdayIndex = (timestamp: string) => {
             const day = new Date(timestamp).getDay();
@@ -579,40 +402,6 @@ export default function DashboardPage() {
                     return Number(avg.toFixed(1));
                 }),
             }));
-    }, [logs]);
-    const activityMapRows = useMemo<MemberActivityHeatRow[]>(() => {
-        const weekdayIndex = (timestamp: string) => {
-            const day = new Date(timestamp).getDay();
-            return day === 0 ? 6 : day - 1;
-        };
-        const grouped = new Map<string, number[]>();
-
-        for (const log of logs) {
-            const date = new Date(log.timestamp);
-            if (Number.isNaN(date.getTime())) continue;
-            const actor = log.actor_name?.trim() || "System";
-            if (!grouped.has(actor)) {
-                grouped.set(actor, Array.from({ length: 7 }, () => 0));
-            }
-            grouped.get(actor)![weekdayIndex(log.timestamp)] += 1;
-        }
-
-        return Array.from(grouped.entries())
-            .sort((a, b) => b[1].reduce((sum, count) => sum + count, 0) - a[1].reduce((sum, count) => sum + count, 0))
-            .slice(0, 6)
-            .map(([label, counts]) => {
-                const max = Math.max(...counts, 1);
-                return {
-                    label,
-                    cells: counts.map((count) => ({
-                        intensity:
-                            count === 0 ? 0 :
-                            count / max < 0.3 ? 1 :
-                            count / max < 0.55 ? 2 :
-                            count / max < 0.8 ? 3 : 4,
-                    })),
-                };
-            });
     }, [logs]);
 
     return (
@@ -656,41 +445,6 @@ export default function DashboardPage() {
                     <div className="grid gap-5 xl:grid-cols-3">
                         <LogsWindow logs={logs.slice(0, 8)} loading={logsLoading} error={logsError} onMaximize={() => setLogsOpen(true)} compact />
                         <CumulativeFlowWindow series={cumulativeFlowSeries} loading={logsLoading} />
-                        <WipWindow slices={wipSlices} loading={isLoading} />
-                        <ActivityMapWindow rows={activityMapRows} loading={logsLoading} />
-                        <DashboardSurface>
-                                <div className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">Workload Snapshot</div>
-                                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                                    <div data-dashboard-stat className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                                        <div className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Projects</div>
-                                        <div className="mt-2 text-2xl font-semibold text-slate-950">{summary?.project_count ?? 0}</div>
-                                    </div>
-                                    <div data-dashboard-stat className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                                        <div className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Tasks</div>
-                                        <div className="mt-2 text-2xl font-semibold text-slate-950">{summary?.task_count ?? 0}</div>
-                                    </div>
-                                    <div data-dashboard-stat className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                                        <div className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Team</div>
-                                        <div className="mt-2 text-2xl font-semibold text-slate-950">{summary?.team_member_count ?? 0}</div>
-                                    </div>
-                                    <div data-dashboard-stat className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-                                        <div className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Completed</div>
-                                        <div className="mt-2 text-2xl font-semibold text-emerald-700">{summary?.completed_task_count ?? 0}</div>
-                                    </div>
-                                </div>
-                        </DashboardSurface>
-                        <DashboardSurface className="xl:col-span-3">
-                                <div className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">Top Statuses</div>
-                                <div className="mt-4 flex flex-wrap gap-2">
-                                    {topStatus.length > 0 ? topStatus.map((status) => (
-                                        <DashboardBadge key={status.key || status.label} tone="slate">
-                                            {status.label}: {status.count}
-                                        </DashboardBadge>
-                                    )) : (
-                                        <p className="text-sm text-slate-500">Task status distribution will appear once work items are created.</p>
-                                    )}
-                                </div>
-                        </DashboardSurface>
                     </div>
                 </div>
             </DashboardContent>

@@ -11,6 +11,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { authApi } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 const registerSchema = z.object({
     companyName: z.string().min(1, "Company name is required"),
@@ -29,6 +30,7 @@ export function RegisterPageLegacy() {
     const { register: registerAuth } = useAuth();
     const { locale, setLocale } = useLanguage();
     const [error, setError] = useState<string | null>(null);
+    const router = useRouter();
 
     const {
         register,
@@ -47,7 +49,7 @@ export function RegisterPageLegacy() {
                 password: data.password,
                 name: data.fullName,
             });
-            setError("Registration request reached the Go backend, but the register flow is still scaffolded there.");
+            router.push(`/login?error=${encodeURIComponent(locale === "es" ? "Cuenta creada. Inicia sesion para continuar." : "Account created. Sign in to continue.")}`);
         } catch (err: unknown) {
             const maybeErr = err as {
                 response?: {

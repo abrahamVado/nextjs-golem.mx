@@ -264,8 +264,8 @@ export const taskApi = {
 };
 
 export const userApi = {
-  getMe: () => api.get<{ data: { user_id: string; company_id: string; branch_id?: string | null; name?: string; email?: string; role?: string; avatar_url?: string } }>('/me'),
-  updateMe: (data: { name: string }) => api.patch<{ data: { user_id: string; company_id: string; branch_id?: string | null; name?: string; email?: string; role?: string; avatar_url?: string } }>('/me', data),
+  getMe: () => api.get<{ data: { user_id: string; company_id: string; branch_id?: string | null; name?: string; email?: string; role?: string; avatar_url?: string; account_type?: string; is_premium?: boolean; is_blocked?: boolean; premium_days_remaining?: number; free_days_remaining?: number; premium_expires_at?: string | null; free_expires_at?: string | null; blocked_at?: string | null } }>('/me'),
+  updateMe: (data: { name: string }) => api.patch<{ data: { user_id: string; company_id: string; branch_id?: string | null; name?: string; email?: string; role?: string; avatar_url?: string; account_type?: string; is_premium?: boolean; is_blocked?: boolean; premium_days_remaining?: number; free_days_remaining?: number; premium_expires_at?: string | null; free_expires_at?: string | null; blocked_at?: string | null } }>('/me', data),
   listUsers: () => api.get<{ data: { company_id: string; module: string; items: unknown[] } }>('/users'),
   uploadAvatar: (file: File) => {
     const form = new FormData();
