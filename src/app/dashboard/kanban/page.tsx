@@ -162,7 +162,7 @@ interface TaskDraft {
     files: TaskFileRef[];
 }
 
-function emptyDraft(column = "backlog"): TaskDraft {
+function emptyDraft(column = "todo"): TaskDraft {
     return { title: "", description: "", column_key: column, priority: "MEDIUM", due_date: "", tags: [], assignees: [], watchers: [], owner_id: null, story_points: null, checklist: [], files: [] };
 }
 
@@ -201,6 +201,7 @@ export default function KanbanPage({ initialProjectId = null }: { initialProject
     const [columnModalOpen, setColumnModalOpen] = useState(false);
     const [columnTitle, setColumnTitle] = useState("");
     const [columnColor, setColumnColor] = useState("gray");
+    const [minimizedColumns, setMinimizedColumns] = useState<string[]>([]);
     const [confirm, setConfirm] = useState<{ open: boolean; title: string; message: string; action: (() => void | Promise<void>) | null }>({
         open: false,
         title: "",
@@ -484,7 +485,7 @@ export default function KanbanPage({ initialProjectId = null }: { initialProject
                 id: task.id,
                 title: task.title || "",
                 description: task.description || "",
-                column_key: task.column_key || "backlog",
+                column_key: task.column_key || "todo",
                 priority: task.priority || "MEDIUM",
                 due_date: toDateInput(task.due_date),
                 tags: [...(task.tags || [])],
@@ -507,7 +508,7 @@ export default function KanbanPage({ initialProjectId = null }: { initialProject
                         id: detailedTask.id,
                         title: detailedTask.title || "",
                         description: detailedTask.description || "",
-                        column_key: detailedTask.column_key || task.column_key || "backlog",
+                        column_key: detailedTask.column_key || task.column_key || "todo",
                         priority: detailedTask.priority || task.priority || "MEDIUM",
                         due_date: toDateInput(detailedTask.due_date),
                         tags: [...(detailedTask.tags || [])],
@@ -544,7 +545,7 @@ export default function KanbanPage({ initialProjectId = null }: { initialProject
                 setIsTaskHydrating(false);
             }
         } else {
-            setTaskDraft(emptyDraft(columnKey || "backlog"));
+            setTaskDraft(emptyDraft(columnKey || "todo"));
             setTimeEntries([]);
             setShouldMigrateLocalTime(false);
             setTaskModalOpen(true);
@@ -705,7 +706,7 @@ export default function KanbanPage({ initialProjectId = null }: { initialProject
                             id: task.id,
                             title: task.title || "",
                             description: task.description || "",
-                            column_key: task.column_key || "backlog",
+                            column_key: task.column_key || "todo",
                             priority: task.priority || "MEDIUM",
                             due_date: toDateInput(task.due_date),
                             tags: [...(task.tags || [])],
@@ -840,17 +841,23 @@ export default function KanbanPage({ initialProjectId = null }: { initialProject
         setConfirm({
             open: true,
             title: "Delete Column",
-            message: `Delete "${column.title}"? ${taskCount > 0 ? `${taskCount} task(s) will be moved to Backlog.` : "This action cannot be undone."}`,
+            message: `Delete "${column.title}"? ${taskCount > 0 ? `${taskCount} task(s) will be moved to To Do.` : "This action cannot be undone."}`,
             action: async () => {
                 try {
                     await api.delete(`/projects/${projectId}/board/columns/${column.id}`, { headers: authHeaders() });
                     await fetchBoard(projectId);
-                    showToast("Column deleted and tasks moved to Backlog", "success");
+                    showToast("Column deleted and tasks moved to To Do", "success");
                 } catch (requestError: unknown) {
                     showToast(getErrorMessage(requestError, "Failed to delete column"), "error");
                 }
             },
         });
+    };
+
+    const toggleColumnMinimize = (columnKey: string) => {
+        setMinimizedColumns((prev) =>
+            prev.includes(columnKey) ? prev.filter((key) => key !== columnKey) : [...prev, columnKey]
+        );
     };
 
     const runConfirm = async () => {
@@ -1083,6 +1090,8 @@ export default function KanbanPage({ initialProjectId = null }: { initialProject
                                     memberMap={memberMap}
                                     initials={initials}
                                     dueLabel={dueLabel}
+                                    isMinimized={minimizedColumns.includes(column.key)}
+                                    onToggleMinimize={toggleColumnMinimize}
                                     onTaskClick={(task) => openTaskModal("edit", task)}
                                     onDeleteColumn={confirmDeleteColumn}
                                     onAddTask={(columnKey) => openTaskModal("create", undefined, columnKey)}
