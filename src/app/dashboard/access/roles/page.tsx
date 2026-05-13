@@ -722,7 +722,7 @@ export default function RolesPage() {
                     <DashboardNotice className="mb-6">{error}</DashboardNotice>
                 ) : null}
 
-                <div hidden={showDocumentation} className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+                <div hidden={showDocumentation} className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
                         {roles.map((role, roleIndex) => (
                             <section
                                 key={role.id}
