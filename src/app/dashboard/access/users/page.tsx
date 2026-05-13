@@ -366,7 +366,8 @@ export default function UsersPage() {
                     <DashboardNotice>{error}</DashboardNotice>
                 ) : null}
 
-                <DashboardSurface hidden={showDocumentation} className="overflow-hidden rounded-[28px] p-0 shadow-[0_18px_50px_rgba(15,23,42,0.12)]">
+                <div hidden={showDocumentation}>
+                <DashboardSurface className="overflow-hidden rounded-[28px] p-0 shadow-[0_18px_50px_rgba(15,23,42,0.12)]">
                     <DashboardSectionHeading
                         title="Workspace people"
                         description="A cleaner, more operational table generated from live backend user records."
@@ -533,8 +534,10 @@ export default function UsersPage() {
                         </>
                     )}
                 </DashboardSurface>
+                </div>
 
-                <DashboardSurface hidden={!showDocumentation}>
+                <div hidden={!showDocumentation}>
+                <DashboardSurface>
                     <div className="flex items-start justify-between gap-4">
                         <div>
                             <h3 className="text-lg font-semibold text-slate-950">Implementation notes</h3>
@@ -548,6 +551,7 @@ export default function UsersPage() {
                         {JSON.stringify(filteredUsers.map((user) => user.raw), null, 2)}
                     </pre>
                 </DashboardSurface>
+                </div>
             </DashboardContent>
 
             {showCreateModal ? (
