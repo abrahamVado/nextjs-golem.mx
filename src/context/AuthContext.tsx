@@ -31,6 +31,7 @@ interface User {
     premium_expires_at?: string | null;
     free_expires_at?: string | null;
     blocked_at?: string | null;
+    permission_names?: string[];
 }
 
 interface LoginCredentials {
@@ -62,6 +63,7 @@ type MeResponse = {
     premium_expires_at?: string | null;
     free_expires_at?: string | null;
     blocked_at?: string | null;
+    permission_names?: string[];
 };
 
 interface AuthContextType {
@@ -108,6 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 email: payload.email || "",
                 name: payload.name || payload.user_id,
                 role: payload.role,
+                permission_names: payload.permission_names || [],
                 avatar_url: resolveAssetURL(payload.avatar_url),
                 account_type: payload.account_type,
                 is_premium: payload.is_premium,

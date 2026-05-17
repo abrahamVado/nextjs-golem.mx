@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
 import { useUI } from "@/components/providers/ui-provider";
 import { useLanguage } from "@/components/providers/language-provider";
-import { isClientRole } from "@/lib/access";
+import { hasApiAdminAccess, isClientRole } from "@/lib/access";
 import {
     LayoutDashboard,
     Settings,
@@ -34,6 +34,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
     const { __ } = useLanguage();
     const [expandedItem, setExpandedItem] = useState<string | null>(null);
     const clientOnly = isClientRole(user);
+    const canManageApi = hasApiAdminAccess(user);
 
     const toggleSidebar = () => {
         updateSettings({ sidebarCollapsed: !settings.sidebarCollapsed });
@@ -67,7 +68,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose:
                 { label: "Roles", href: "/dashboard/access/roles", icon: ShieldAlert },
             ]
         },
-        ...(!clientOnly ? [{
+        ...(canManageApi ? [{
             label: "API Security",
             href: "/dashboard/api",
             icon: KeyRound,
