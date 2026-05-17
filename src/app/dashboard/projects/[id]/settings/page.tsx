@@ -6,6 +6,7 @@ import { DashboardCanvas, DashboardContent, DashboardHero, DashboardSurface } fr
 import { Button } from '@/components/ui/Button';
 import { projectApi, teamApi } from '@/lib/api';
 import { getErrorMessage } from '@/lib/errors';
+import { ProjectPublicPage } from '@/types';
 
 type TeamMember = {
     user_id: string;
@@ -42,6 +43,12 @@ export default function ProjectSettingsPage() {
     const [projectMembers, setProjectMembers] = useState<ProjectMember[]>([]);
     const [selectedMemberId, setSelectedMemberId] = useState('');
     const [selectedRole, setSelectedRole] = useState<'admin' | 'member'>('member');
+    const [publicPage, setPublicPage] = useState<ProjectPublicPage | null>(null);
+    const [portalEnabled, setPortalEnabled] = useState(false);
+    const [portalAccessMode, setPortalAccessMode] = useState<'public' | 'password_protected'>('public');
+    const [portalSlug, setPortalSlug] = useState('');
+    const [portalTitle, setPortalTitle] = useState('');
+    const [portalPassword, setPortalPassword] = useState('');
 
     useEffect(() => {
         let active = true;
@@ -58,6 +65,21 @@ export default function ProjectSettingsPage() {
 
                 const nextProject = (projectRes.data.data || {}) as ProjectRecord;
                 setProject(nextProject);
+                try {
+                    const publicPageRes = await projectApi.getPublicPage(projectId);
+                    if (!active) return;
+                    const nextPublicPage = publicPageRes.data.data;
+                    setPublicPage(nextPublicPage);
+                    setPortalEnabled(nextPublicPage.is_enabled);
+                    setPortalAccessMode(nextPublicPage.access_mode === 'password_protected' ? 'password_protected' : 'public');
+                    setPortalSlug(nextPublicPage.slug || '');
+                    setPortalTitle(nextPublicPage.title || nextProject.name || '');
+                    setPortalPassword('');
+                } catch (publicPageError: unknown) {
+                    if (!active) return;
+                    setError(getErrorMessage(publicPageError, 'Failed to load project portal settings'));
+                    return;
+                }
 
                 const firstTeam = teamsRes.data.data?.[0];
                 if (!firstTeam?.id) {
@@ -156,6 +178,38 @@ export default function ProjectSettingsPage() {
         }
     };
 
+    const savePortalSettings = async () => {
+        setSaving(true);
+        setError(null);
+        setSavedMessage('');
+        try {
+            const response = await projectApi.updatePublicPage(projectId, {
+                enabled: portalEnabled,
+                access_mode: portalAccessMode,
+                password: portalAccessMode === 'password_protected' ? portalPassword.trim() || undefined : undefined,
+                slug: portalSlug.trim() || undefined,
+                title: portalTitle.trim() || undefined,
+            });
+            const nextPublicPage = response.data.data;
+            setPublicPage(nextPublicPage);
+            setPortalEnabled(nextPublicPage.is_enabled);
+            setPortalAccessMode(nextPublicPage.access_mode === 'password_protected' ? 'password_protected' : 'public');
+            setPortalSlug(nextPublicPage.slug || '');
+            setPortalTitle(nextPublicPage.title || '');
+            setPortalPassword('');
+            setSavedMessage('Client portal updated');
+            window.setTimeout(() => setSavedMessage(''), 1600);
+        } catch (requestError: unknown) {
+            setError(getErrorMessage(requestError, 'Failed to save client portal settings'));
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const publicPortalURL = publicPage ? `/api/v1/public/projects/${publicPage.slug}` : '';
+    const registerEndpoint = publicPage?.register_endpoint || '';
+    const ticketEndpoint = publicPage?.ticket_create_endpoint || '';
+
     return (
         <DashboardCanvas>
             <DashboardContent>
@@ -197,6 +251,92 @@ export default function ProjectSettingsPage() {
                                     <div className="mt-2 text-2xl font-semibold text-foreground">{projectMembers.length}</div>
                                     <div className="mt-1 text-sm text-muted-foreground">invited members</div>
                                 </div>
+                            </div>
+                        </DashboardSurface>
+
+                        <DashboardSurface className="space-y-4">
+                            <div className="space-y-1">
+                                <h2 className="text-base font-semibold text-foreground">Client Portal and Ticket Intake</h2>
+                                <p className="text-sm text-muted-foreground">Configure the public project page your clients use to register and submit tickets into this project.</p>
+                            </div>
+
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <label className="space-y-2">
+                                    <span className="text-sm font-medium text-foreground">Portal status</span>
+                                    <select
+                                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+                                        value={portalEnabled ? 'enabled' : 'disabled'}
+                                        onChange={(event) => setPortalEnabled(event.target.value === 'enabled')}
+                                    >
+                                        <option value="disabled">Disabled</option>
+                                        <option value="enabled">Enabled</option>
+                                    </select>
+                                </label>
+
+                                <label className="space-y-2">
+                                    <span className="text-sm font-medium text-foreground">Access mode</span>
+                                    <select
+                                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+                                        value={portalAccessMode}
+                                        onChange={(event) => setPortalAccessMode(event.target.value as 'public' | 'password_protected')}
+                                    >
+                                        <option value="public">Public</option>
+                                        <option value="password_protected">Password protected</option>
+                                    </select>
+                                </label>
+
+                                <label className="space-y-2">
+                                    <span className="text-sm font-medium text-foreground">Portal slug</span>
+                                    <input
+                                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+                                        value={portalSlug}
+                                        onChange={(event) => setPortalSlug(event.target.value)}
+                                        placeholder="project-support"
+                                    />
+                                </label>
+
+                                <label className="space-y-2">
+                                    <span className="text-sm font-medium text-foreground">Portal title</span>
+                                    <input
+                                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+                                        value={portalTitle}
+                                        onChange={(event) => setPortalTitle(event.target.value)}
+                                        placeholder="Client support portal"
+                                    />
+                                </label>
+                            </div>
+
+                            {portalAccessMode === 'password_protected' ? (
+                                <label className="space-y-2 block">
+                                    <span className="text-sm font-medium text-foreground">Portal password</span>
+                                    <input
+                                        type="password"
+                                        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground"
+                                        value={portalPassword}
+                                        onChange={(event) => setPortalPassword(event.target.value)}
+                                        placeholder="Leave blank to keep the current password"
+                                    />
+                                </label>
+                            ) : null}
+
+                            <div className="grid gap-3 md:grid-cols-3">
+                                <div className="rounded-xl border border-border/60 bg-background/70 p-4">
+                                    <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Portal URL</div>
+                                    <div className="mt-2 break-all text-sm font-medium text-foreground">{publicPortalURL || 'Available after loading'}</div>
+                                </div>
+                                <div className="rounded-xl border border-border/60 bg-background/70 p-4">
+                                    <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Register Endpoint</div>
+                                    <div className="mt-2 break-all text-sm font-medium text-foreground">{registerEndpoint || 'Available after saving'}</div>
+                                </div>
+                                <div className="rounded-xl border border-border/60 bg-background/70 p-4">
+                                    <div className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Ticket Endpoint</div>
+                                    <div className="mt-2 break-all text-sm font-medium text-foreground">{ticketEndpoint || 'Available after saving'}</div>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-end gap-3">
+                                {savedMessage ? <span className="text-sm text-emerald-600">{savedMessage}</span> : null}
+                                <Button onClick={savePortalSettings} isLoading={saving}>Save Client Portal</Button>
                             </div>
                         </DashboardSurface>
 
