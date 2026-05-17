@@ -1,11 +1,23 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Maximize2 } from "lucide-react";
 import { dashboardApi } from "@/lib/api";
 import { getErrorMessage } from "@/lib/errors";
 import { useAuth } from "@/context/AuthContext";
-import { DashboardCanvas, DashboardContent, DashboardHero, DashboardModalFrame, DashboardNotice, DashboardSurface, useDashboardMotion } from "@/components/layout/dashboard-visuals";
+import { Button } from "@/components/ui/Button";
+import {
+    DashboardBadge,
+    DashboardCanvas,
+    DashboardContent,
+    DashboardHero,
+    DashboardModalFrame,
+    DashboardNotice,
+    DashboardSurface,
+    DashboardToolbar,
+    useDashboardMotion,
+} from "@/components/layout/dashboard-visuals";
 
 type DashboardSummary = {
     company_id: string;
@@ -30,13 +42,6 @@ type SystemLogEntry = {
     user_agent?: string;
     message: string;
     severity: "info" | "warn" | "error" | "success" | string;
-};
-
-type FlowSeries = {
-    label: string;
-    color: string;
-    fill: string;
-    points: number[];
 };
 
 type MemberActivitySeries = {
@@ -121,7 +126,7 @@ function SystemLogsTerminal({
                                 {(log.resource || log.ip_address) ? (
                                     <span className="ml-2 text-slate-500">
                                         {log.resource ? `(${log.resource}` : "("}
-                                        {log.resource && log.ip_address ? " · " : ""}
+                                        {log.resource && log.ip_address ? " | " : ""}
                                         {log.ip_address || ""}
                                         )
                                     </span>
@@ -133,19 +138,6 @@ function SystemLogsTerminal({
             )}
         </div>
     );
-}
-
-function buildSeriesPath(points: Array<number | null>, maxValue: number) {
-    const width = 260;
-    const height = 120;
-    const stepX = width / Math.max(points.length - 1, 1);
-    const normalized = points.map((point, index) => {
-        const safePoint = point ?? 0;
-        const x = index * stepX;
-        const y = height - (maxValue === 0 ? 0 : (safePoint / maxValue) * height);
-        return `${x},${y}`;
-    });
-    return normalized.join(" ");
 }
 
 function CumulativeFlowChart({ series }: { series: MemberActivitySeries[] }) {
@@ -205,82 +197,6 @@ function CumulativeFlowChart({ series }: { series: MemberActivitySeries[] }) {
                 </div>
             </div>
         </div>
-    );
-}
-
-function CumulativeFlowWindow({
-    series,
-    loading,
-}: {
-    series: MemberActivitySeries[];
-    loading: boolean;
-}) {
-    return (
-        <section className="overflow-hidden rounded-[10px] border border-[#d6dbe3] bg-white shadow-[0_4px_20px_rgba(15,23,42,0.12)] xl:col-span-2">
-            <div className="flex items-center gap-2 border-b border-[#d6dbe3] bg-[#f5f9ff] px-3 py-2">
-                <div className="flex gap-[6px]">
-                    <span className="h-3 w-3 rounded-full bg-[#ef4444]" />
-                    <span className="h-3 w-3 rounded-full bg-[#f59e0b]" />
-                    <span className="h-3 w-3 rounded-full bg-[#22c55e]" />
-                </div>
-                <span className="ml-2 flex-1 truncate font-mono text-[11px] text-slate-500">CUMULATIVE FLOW</span>
-            </div>
-            <div className="px-4 pb-4 pt-3">
-                <div className="pb-2 font-mono text-[11px] text-slate-500">Team activity by weekday and hour</div>
-                {loading ? (
-                    <div className="font-mono text-[11px] text-slate-400">Loading cumulative flow...</div>
-                ) : (
-                    <CumulativeFlowChart series={series} />
-                )}
-            </div>
-        </section>
-    );
-}
-
-function LogsWindow({
-    logs,
-    loading,
-    error,
-    onMaximize,
-    compact = false,
-}: {
-    logs: SystemLogEntry[];
-    loading: boolean;
-    error: string | null;
-    onMaximize?: () => void;
-    compact?: boolean;
-}) {
-    return (
-        <section className="overflow-hidden rounded-[10px] border border-[#2d3748] bg-[#0a0a0a] shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
-            <div className="flex items-center gap-2 border-b border-[#2d3748] bg-[#1a1a1a] px-3 py-2">
-                <div className="flex gap-[6px]">
-                    <span className="h-3 w-3 rounded-full bg-[#ef4444]" />
-                    <span className="h-3 w-3 rounded-full bg-[#f59e0b]" />
-                    {onMaximize ? (
-                        <button
-                            type="button"
-                            onClick={onMaximize}
-                            className="grid h-3 w-3 place-items-center rounded-full bg-[#22c55e] text-[7px] text-black/60 transition-transform hover:scale-110"
-                            title="Maximize"
-                        >
-                            <Maximize2 className="h-2 w-2" />
-                        </button>
-                    ) : (
-                        <span className="h-3 w-3 rounded-full bg-[#22c55e]" />
-                    )}
-                </div>
-                <span className="ml-2 flex-1 truncate font-mono text-[11px] text-slate-500">SYSTEM LOGS</span>
-            </div>
-            <div className="px-4 pb-4 pt-3">
-                <div className="pb-2 font-mono text-[11px] text-slate-500">Real-time kanban engine activity</div>
-                {error ? <DashboardNotice tone="red" className="mb-3 border-red-900/70 bg-red-950/40 text-red-200">{error}</DashboardNotice> : null}
-                {loading ? (
-                    <div className="font-mono text-[11px] text-slate-400">Loading system logs...</div>
-                ) : (
-                    <SystemLogsTerminal logs={logs} emptyMessage="No audit logs have been recorded for this company yet." compact={compact} />
-                )}
-            </div>
-        </section>
     );
 }
 
@@ -411,7 +327,7 @@ export default function DashboardPage() {
                     <DashboardHero
                         eyebrow={<><span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_0_6px_rgba(16,185,129,0.16)]" />Operations</>}
                         title="Operational visibility across work, delivery, and team activity"
-                        description="Track where work is moving, who is active, which projects are carrying the load, and how delivery is evolving across the week."
+                        description="Track where work is moving, who is active, and which projects are carrying the load."
                         right={
                             <DashboardSurface className="border-slate-200/80 bg-white/75 p-4 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
                                 {summary ? (
@@ -440,12 +356,68 @@ export default function DashboardPage() {
                         }
                     />
 
+                    <DashboardToolbar>
+                        <div>
+                            <div className="flex flex-wrap items-center gap-3">
+                                <DashboardBadge tone="emerald">Quick actions</DashboardBadge>
+                                <p className="text-sm text-slate-600">Launch the most common workspace actions without leaving the dashboard.</p>
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <Button variant="outline" asChild>
+                                <Link href="/dashboard/projects">Create project</Link>
+                            </Button>
+                            <Button variant="outline" asChild>
+                                <Link href="/dashboard/teams">Invite member</Link>
+                            </Button>
+                            <Button variant="outline" asChild>
+                                <Link href="/dashboard/teams">Create team</Link>
+                            </Button>
+                        </div>
+                    </DashboardToolbar>
+
                     {error ? <DashboardNotice tone="red">{error}</DashboardNotice> : null}
 
-                    <div className="grid gap-5 xl:grid-cols-3">
-                        <LogsWindow logs={logs.slice(0, 8)} loading={logsLoading} error={logsError} onMaximize={() => setLogsOpen(true)} compact />
-                        <CumulativeFlowWindow series={cumulativeFlowSeries} loading={logsLoading} />
-                    </div>
+                    <section className="overflow-hidden rounded-[10px] border border-[#2d3748] bg-[#0a0a0a] shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+                        <div className="flex items-center gap-2 border-b border-[#2d3748] bg-[#1a1a1a] px-3 py-2">
+                            <div className="flex gap-[6px]">
+                                <span className="h-3 w-3 rounded-full bg-[#ef4444]" />
+                                <span className="h-3 w-3 rounded-full bg-[#f59e0b]" />
+                                <button
+                                    type="button"
+                                    onClick={() => setLogsOpen(true)}
+                                    className="grid h-3 w-3 place-items-center rounded-full bg-[#22c55e] text-[7px] text-black/60 transition-transform hover:scale-110"
+                                    title="Maximize"
+                                >
+                                    <Maximize2 className="h-2 w-2" />
+                                </button>
+                            </div>
+                            <span className="ml-2 flex-1 truncate font-mono text-[11px] text-slate-500">SYSTEM LOGS</span>
+                        </div>
+                        <div className="px-4 pb-4 pt-3">
+                            <div className="pb-2 font-mono text-[11px] text-slate-500">Real-time kanban engine activity</div>
+                            {logsError ? <DashboardNotice tone="red" className="mb-3 border-red-900/70 bg-red-950/40 text-red-200">{logsError}</DashboardNotice> : null}
+                            {logsLoading ? (
+                                <div className="font-mono text-[11px] text-slate-400">Loading system logs...</div>
+                            ) : (
+                                <SystemLogsTerminal logs={logs.slice(0, 8)} emptyMessage="No audit logs have been recorded for this company yet." compact />
+                            )}
+                        </div>
+                    </section>
+
+                    <DashboardSurface>
+                        <div className="border-b border-slate-200 pb-4">
+                            <h3 className="text-lg font-semibold text-slate-950">Team flow</h3>
+                            <p className="mt-1 text-sm text-slate-500">Weekly activity by collaborator, grouped by average working hour.</p>
+                        </div>
+                        <div className="pt-4">
+                            {logsLoading ? (
+                                <div className="font-mono text-[11px] text-slate-400">Loading cumulative flow...</div>
+                            ) : (
+                                <CumulativeFlowChart series={cumulativeFlowSeries} />
+                            )}
+                        </div>
+                    </DashboardSurface>
                 </div>
             </DashboardContent>
 
@@ -453,7 +425,25 @@ export default function DashboardPage() {
                 <div onClick={() => setLogsOpen(false)}>
                     <DashboardModalFrame width="max-w-[1100px]">
                         <div onClick={(event) => event.stopPropagation()}>
-                            <LogsWindow logs={fullLogs} loading={fullLogsLoading} error={logsError} compact={false} />
+                            <DashboardSurface className="overflow-hidden rounded-[10px] border border-[#2d3748] bg-[#0a0a0a] p-0 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+                                <div className="flex items-center gap-2 border-b border-[#2d3748] bg-[#1a1a1a] px-3 py-2">
+                                    <div className="flex gap-[6px]">
+                                        <span className="h-3 w-3 rounded-full bg-[#ef4444]" />
+                                        <span className="h-3 w-3 rounded-full bg-[#f59e0b]" />
+                                        <span className="h-3 w-3 rounded-full bg-[#22c55e]" />
+                                    </div>
+                                    <span className="ml-2 flex-1 truncate font-mono text-[11px] text-slate-500">SYSTEM LOGS</span>
+                                </div>
+                                <div className="px-4 pb-4 pt-3">
+                                    <div className="pb-2 font-mono text-[11px] text-slate-500">Expanded operational console</div>
+                                    {logsError ? <DashboardNotice tone="red" className="mb-3 border-red-900/70 bg-red-950/40 text-red-200">{logsError}</DashboardNotice> : null}
+                                    {fullLogsLoading ? (
+                                        <div className="font-mono text-[11px] text-slate-400">Loading system logs...</div>
+                                    ) : (
+                                        <SystemLogsTerminal logs={fullLogs} emptyMessage="No audit logs have been recorded for this company yet." compact={false} />
+                                    )}
+                                </div>
+                            </DashboardSurface>
                         </div>
                     </DashboardModalFrame>
                 </div>
