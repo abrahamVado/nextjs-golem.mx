@@ -17,7 +17,9 @@ import {
   Webhook,
   AdminInvite,
   ProjectSummary,
+  PublicTicketCreateRequest,
   TicketListItem,
+  TicketDetail,
   TicketTaskRecord,
   TicketStatus,
 } from '../types';
@@ -196,6 +198,94 @@ function toTicketTaskRecord(input: UnknownRecord): TicketTaskRecord {
         })
       : [],
     tags: Array.isArray(input.tags) ? input.tags.map((value) => String(value)) : [],
+  };
+}
+
+function parseRequesterFromDescription(description?: string): {
+  requesterName: string;
+  requesterEmail?: string;
+  requesterCompany?: string;
+  requesterCategory?: string;
+  body?: string;
+} {
+  if (!description) {
+    return { requesterName: 'Portal requester', body: description };
+  }
+
+  const lines = description.split(/\r?\n/);
+  let requesterName = 'Portal requester';
+  let requesterEmail: string | undefined;
+  let requesterCompany: string | undefined;
+  let requesterCategory: string | undefined;
+  let bodyStart = 0;
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i].trim();
+    if (line === '') {
+      bodyStart = i + 1;
+      break;
+    }
+    if (line.startsWith('Requester: ')) requesterName = line.slice('Requester: '.length).trim() || requesterName;
+    else if (line.startsWith('Email: ')) requesterEmail = line.slice('Email: '.length).trim() || undefined;
+    else if (line.startsWith('Company: ')) requesterCompany = line.slice('Company: '.length).trim() || undefined;
+    else if (line.startsWith('Category: ')) requesterCategory = line.slice('Category: '.length).trim() || undefined;
+    else {
+      bodyStart = i;
+      break;
+    }
+  }
+
+  return {
+    requesterName,
+    requesterEmail,
+    requesterCompany,
+    requesterCategory,
+    body: lines.slice(bodyStart).join('\n').trim() || description,
+  };
+}
+
+function buildAbsoluteApiUrl(path: string): string {
+  if (/^https?:\/\//i.test(path)) return path;
+  const origin = API_BASE_URL.replace(/\/api\/v1\/?$/, '');
+  return `${origin}${path.startsWith('/') ? path : `/${path}`}`;
+}
+
+function toTicketDetail(task: TicketTaskRecord, options?: { projectId?: string; projectName?: string; ticketNumber?: string }): TicketDetail {
+  const requester = parseRequesterFromDescription(task.description);
+  return {
+    id: task.id,
+    ticket_number: options?.ticketNumber || `TKT-${task.id.slice(0, 8).toUpperCase()}`,
+    title: task.title,
+    description: requester.body,
+    status: toTicketStatusFromTaskColumn(task.column_key),
+    priority: String(task.priority || 'MEDIUM').toUpperCase() as TicketDetail['priority'],
+    project_id: options?.projectId || '',
+    project_name: options?.projectName || 'Support project',
+    requester_name: requester.requesterName,
+    requester_id: task.owner_id || null,
+    assignee_ids: task.assignees || [],
+    watcher_ids: task.watchers || [],
+    created_at: undefined,
+    updated_at: undefined,
+    due_date: task.due_date,
+    tags: task.tags || [],
+    source: 'project_task_mvp',
+    activity_history: [],
+    attachments: [],
+    comments: requester.requesterEmail || requester.requesterCompany || requester.requesterCategory
+      ? [{
+          id: `${task.id}:requester-context`,
+          user_name: requester.requesterName,
+          user_id: task.owner_id || 'portal-requester',
+          timestamp: new Date().toISOString(),
+          content: [
+            requester.requesterEmail ? `Email: ${requester.requesterEmail}` : null,
+            requester.requesterCompany ? `Company: ${requester.requesterCompany}` : null,
+            requester.requesterCategory ? `Category: ${requester.requesterCategory}` : null,
+          ].filter(Boolean).join('\n'),
+          is_internal_note: false,
+        }]
+      : [],
   };
 }
 
@@ -500,6 +590,20 @@ export const ticketApi = {
   },
   getById: async (ticketId: string): Promise<TicketTaskRecord> => {
     const response = await api.get<{ data: UnknownRecord }>(`/tasks/${ticketId}`);
+    return toTicketTaskRecord((response.data.data || {}) as UnknownRecord);
+  },
+  getDetail: async (
+    ticketId: string,
+    options?: { projectId?: string; projectName?: string; ticketNumber?: string }
+  ): Promise<TicketDetail> => {
+    const task = await ticketApi.getById(ticketId);
+    return toTicketDetail(task, options);
+  },
+};
+
+export const publicTicketApi = {
+  create: async (endpoint: string, data: PublicTicketCreateRequest): Promise<TicketTaskRecord> => {
+    const response = await api.post<{ data: UnknownRecord }>(buildAbsoluteApiUrl(endpoint), data);
     return toTicketTaskRecord((response.data.data || {}) as UnknownRecord);
   },
 };
