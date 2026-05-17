@@ -13,8 +13,13 @@ import {
   User,
   APIClient,
   APIClientPublicKey,
+  ProjectPublicPage,
   Webhook,
   AdminInvite,
+  ProjectSummary,
+  TicketListItem,
+  TicketTaskRecord,
+  TicketStatus,
 } from '../types';
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.paladin.mx/api/v1';
@@ -115,6 +120,85 @@ function toCanonicalPriority(priority?: string): string | undefined {
   }
 }
 
+function toTicketStatusFromTaskColumn(columnKey?: string): TicketStatus {
+  const normalized = (columnKey || '').trim().toLowerCase();
+  switch (normalized) {
+    case 'todo':
+    case 'backlog':
+      return 'New';
+    case 'in_progress':
+    case 'in-progress':
+    case 'in_review':
+    case 'in-review':
+      return 'Open';
+    case 'done':
+      return 'Resolved';
+    case 'archived':
+      return 'Closed';
+    default:
+      return 'Open';
+  }
+}
+
+function toProjectSummary(input: UnknownRecord): ProjectSummary {
+  return {
+    id: String(input.id || ''),
+    name: String(input.name || 'Untitled project'),
+    description: typeof input.description === 'string' ? input.description : undefined,
+    icon: typeof input.icon === 'string' ? input.icon : undefined,
+    sprint_size: typeof input.sprint_size === 'number' ? input.sprint_size : null,
+    sprint_start_date: typeof input.sprint_start_date === 'string' ? input.sprint_start_date : undefined,
+  };
+}
+
+function toTicketTaskRecord(input: UnknownRecord): TicketTaskRecord {
+  return {
+    id: String(input.id || ''),
+    title: String(input.title || 'Untitled task'),
+    description: typeof input.description === 'string' ? input.description : undefined,
+    priority: String(input.priority || 'MEDIUM').toUpperCase(),
+    column_key: typeof input.column_key === 'string' ? input.column_key : undefined,
+    assignees: Array.isArray(input.assignees) ? input.assignees.map((value) => String(value)) : [],
+    watchers: Array.isArray(input.watchers) ? input.watchers.map((value) => String(value)) : [],
+    owner_id: input.owner_id == null ? null : String(input.owner_id),
+    story_points: typeof input.story_points === 'number' ? input.story_points : null,
+    due_date: typeof input.due_date === 'string' ? input.due_date : undefined,
+    checklist: Array.isArray(input.checklist)
+      ? input.checklist.map((item) => {
+          const row = item as UnknownRecord;
+          return {
+            id: String(row.id || ''),
+            text: String(row.text || ''),
+            position: Number(row.position || 0),
+            completed: Boolean(row.completed),
+          };
+        })
+      : [],
+    subtasks: Array.isArray(input.subtasks)
+      ? input.subtasks.map((item) => {
+          const row = item as UnknownRecord;
+          return {
+            id: String(row.id || ''),
+            text: String(row.text || ''),
+            position: Number(row.position || 0),
+            completed: Boolean(row.completed),
+          };
+        })
+      : [],
+    time_entries: Array.isArray(input.time_entries)
+      ? input.time_entries.map((item) => {
+          const row = item as UnknownRecord;
+          return {
+            id: row.id == null ? undefined : String(row.id),
+            entry_date: String(row.entry_date || ''),
+            minutes_spent: Number(row.minutes_spent || 0),
+          };
+        })
+      : [],
+    tags: Array.isArray(input.tags) ? input.tags.map((value) => String(value)) : [],
+  };
+}
+
 export const authApi = {
   login: async (data: { email: string; password: string; remember_me?: boolean }) => {
     return api.post<{ data: { token_type: string; expires_in: number } }>('/auth/login', data);
@@ -205,7 +289,21 @@ export const projectApi = {
   deleteProject: (projectId: string | number, teamID: number | string) =>
     api.delete(`/projects/${projectId}`, { headers: teamHeaders(teamID) }),
   getProject: (projectId: string | number) => api.get<{ data: UnknownRecord }>(`/projects/${projectId}`),
+  getBoard: (projectId: string | number, teamID: number | string) =>
+    api.get<{ data: { columns: { id: string; key: string; title: string; color: string; tasks: UnknownRecord[] }[] } }>(`/projects/${projectId}/board`, { headers: teamHeaders(teamID) }),
   getMembers: (projectId: string | number) => api.get<{ data: UnknownRecord[] }>(`/projects/${projectId}/members`),
+  getPublicPage: (projectId: string | number) => api.get<{ data: ProjectPublicPage }>(`/projects/${projectId}/public-page`),
+  updatePublicPage: (
+    projectId: string | number,
+    data: {
+      enabled: boolean;
+      access_mode: 'public' | 'password_protected';
+      password?: string;
+      slug?: string;
+      title?: string;
+      html_template?: string;
+    }
+  ) => api.put<{ data: ProjectPublicPage }>(`/projects/${projectId}/public-page`, data),
   updateMembers: (
     projectId: string | number,
     members: { user_id: string; role: "admin" | "member" }[]
@@ -227,6 +325,7 @@ export const taskApi = {
       description?: string;
       status?: TaskStatusUI | string;
       priority?: TaskPriorityUI | string;
+      due_date?: string;
     }
   ) =>
     api.post<{ data: UnknownRecord }>(
@@ -264,8 +363,8 @@ export const taskApi = {
 };
 
 export const userApi = {
-  getMe: () => api.get<{ data: { user_id: string; company_id: string; branch_id?: string | null; name?: string; email?: string; role?: string; avatar_url?: string; account_type?: string; is_premium?: boolean; is_blocked?: boolean; premium_days_remaining?: number; free_days_remaining?: number; premium_expires_at?: string | null; free_expires_at?: string | null; blocked_at?: string | null } }>('/me'),
-  updateMe: (data: { name: string }) => api.patch<{ data: { user_id: string; company_id: string; branch_id?: string | null; name?: string; email?: string; role?: string; avatar_url?: string; account_type?: string; is_premium?: boolean; is_blocked?: boolean; premium_days_remaining?: number; free_days_remaining?: number; premium_expires_at?: string | null; free_expires_at?: string | null; blocked_at?: string | null } }>('/me', data),
+  getMe: () => api.get<{ data: { user_id: string; company_id: string; branch_id?: string | null; name?: string; email?: string; role?: string; permission_names?: string[]; avatar_url?: string; account_type?: string; is_premium?: boolean; is_blocked?: boolean; premium_days_remaining?: number; free_days_remaining?: number; premium_expires_at?: string | null; free_expires_at?: string | null; blocked_at?: string | null } }>('/me'),
+  updateMe: (data: { name: string }) => api.patch<{ data: { user_id: string; company_id: string; branch_id?: string | null; name?: string; email?: string; role?: string; permission_names?: string[]; avatar_url?: string; account_type?: string; is_premium?: boolean; is_blocked?: boolean; premium_days_remaining?: number; free_days_remaining?: number; premium_expires_at?: string | null; free_expires_at?: string | null; blocked_at?: string | null } }>('/me', data),
   listUsers: () => api.get<{ data: { company_id: string; module: string; items: unknown[] } }>('/users'),
   uploadAvatar: (file: File) => {
     const form = new FormData();
@@ -340,19 +439,67 @@ export const adminApi = {
 export const apiKeyApi = {
   createClient: (data: { name: string; description?: string }) => api.post<{ data: APIClient }>('/apikeys/clients', data),
   listClients: () => api.get<{ data: APIClient[] }>('/apikeys/clients'),
-  createKey: (clientId: number, data: { scopes: string[]; expires_at?: string }) =>
+  createKey: (clientId: string, data: { scopes: string[]; expires_at?: string }) =>
     api.post<{ data: { key_id: string; scopes: string[]; expires_at?: string; api_key_secret_once: string; full_token_once: string } }>(
       `/apikeys/clients/${clientId}/keys`,
       data
     ),
-  revokeKey: (clientId: number, keyId: string) => api.post(`/apikeys/clients/${clientId}/keys/${keyId}/revoke`),
-  uploadPublicKey: (clientId: number, opensshPublicKey: string) =>
+  revokeKey: (clientId: string, keyId: string) => api.post(`/apikeys/clients/${clientId}/keys/${keyId}/revoke`),
+  uploadPublicKey: (clientId: string, opensshPublicKey: string) =>
     api.post<{ data: APIClientPublicKey }>(`/apikeys/clients/${clientId}/public-keys`, { openssh_public_key: opensshPublicKey }),
-  activatePublicKey: (clientId: number, publicKeyId: number, challenge: string, challengeSignature: string) =>
+  activatePublicKey: (clientId: string, publicKeyId: string, challenge: string, challengeSignature: string) =>
     api.post(`/apikeys/clients/${clientId}/public-keys/${publicKeyId}/activate`, {
       challenge,
       challenge_signature: challengeSignature,
     }),
-  revokePublicKey: (clientId: number, publicKeyId: number) =>
+  revokePublicKey: (clientId: string, publicKeyId: string) =>
     api.post(`/apikeys/clients/${clientId}/public-keys/${publicKeyId}/revoke`),
+};
+
+export const ticketApi = {
+  listInbox: async (teamID: number | string): Promise<TicketListItem[]> => {
+    const projectsResponse = await projectApi.listProjects(teamID);
+    const projects = (projectsResponse.data.data || []).map((item) => toProjectSummary(item as UnknownRecord));
+
+    const boardResponses = await Promise.all(
+      projects.map(async (project) => {
+        const boardResponse = await projectApi.getBoard(project.id, teamID);
+        return {
+          project,
+          columns: boardResponse.data.data?.columns || [],
+        };
+      })
+    );
+
+    return boardResponses.flatMap(({ project, columns }) =>
+      columns.flatMap((column) =>
+        (column.tasks || []).map((task) => {
+          const normalized = toTicketTaskRecord(task as UnknownRecord);
+          return {
+            id: normalized.id,
+            ticket_number: `TKT-${normalized.id.slice(0, 8).toUpperCase()}`,
+            title: normalized.title,
+            description: normalized.description,
+            status: toTicketStatusFromTaskColumn(normalized.column_key || column.key),
+            priority: String(normalized.priority || 'MEDIUM').toUpperCase() as TicketListItem['priority'],
+            project_id: project.id,
+            project_name: project.name,
+            requester_name: normalized.owner_id ? `User ${normalized.owner_id.slice(0, 8)}` : 'Portal requester',
+            requester_id: normalized.owner_id || null,
+            assignee_ids: normalized.assignees || [],
+            watcher_ids: normalized.watchers || [],
+            created_at: undefined,
+            updated_at: undefined,
+            due_date: normalized.due_date,
+            tags: normalized.tags || [],
+            source: 'project_task_mvp' as const,
+          };
+        })
+      )
+    );
+  },
+  getById: async (ticketId: string): Promise<TicketTaskRecord> => {
+    const response = await api.get<{ data: UnknownRecord }>(`/tasks/${ticketId}`);
+    return toTicketTaskRecord((response.data.data || {}) as UnknownRecord);
+  },
 };
