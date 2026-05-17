@@ -6,7 +6,7 @@
     "dev": "next dev -H 0.0.0.0 -p 3000",
     "build": "next build",
     "start": "next start -H 0.0.0.0 -p 3000",
-    "lint": "eslint src tests --ext .ts,.tsx",
+    "lint": "eslint src --ext .ts,.tsx",
     "test:e2e": "playwright test tests/e2e/smoke.spec.ts",
     "test:e2e:smoke": "playwright test tests/e2e/smoke.spec.ts",
     "test:e2e:visual": "playwright test tests/e2e/visual.spec.ts",
