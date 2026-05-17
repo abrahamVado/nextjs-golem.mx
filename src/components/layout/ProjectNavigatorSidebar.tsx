@@ -8,7 +8,6 @@ import {
     ArrowLeft,
     ChevronLeft,
     ChevronRight,
-    Folder,
     Menu,
     Pencil,
     Plus,
@@ -124,8 +123,6 @@ export default function ProjectNavigatorSidebar({ isOpen, onClose }: { isOpen: b
 
     const visibleProjects = useMemo(() => projects.slice(0, visibleCount), [projects, visibleCount]);
     const canLoadMore = visibleCount < projects.length;
-    const starredProjects = useMemo(() => visibleProjects.slice(0, Math.min(3, visibleProjects.length)), [visibleProjects]);
-
     const toggleSidebar = () => {
         updateSettings({ sidebarCollapsed: !settings.sidebarCollapsed });
     };
@@ -244,12 +241,12 @@ export default function ProjectNavigatorSidebar({ isOpen, onClose }: { isOpen: b
         }
     };
 
-    const renderProjectRow = (project: ProjectItem, starred = false) => {
+    const renderProjectRow = (project: ProjectItem) => {
         const active = project.id === selectedProjectId;
 
         return (
             <div
-                key={`${starred ? "starred" : "project"}-${project.id}`}
+                key={`project-${project.id}`}
                 className={cn(
                     "group flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200",
                     active ? "bg-primary/10 text-primary shadow-md" : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -257,12 +254,8 @@ export default function ProjectNavigatorSidebar({ isOpen, onClose }: { isOpen: b
                 )}
             >
                 <button type="button" onClick={() => goToProject(project.id)} className="flex min-w-0 flex-1 items-center gap-2 text-left">
-                    {starred ? (
-                        <Folder className={cn("h-4 w-4 shrink-0", active ? "text-primary" : "text-muted-foreground")} />
-                    ) : (
-                        <span className={cn("h-3.5 w-3.5 shrink-0 rounded-[4px]", projectSwatch(project.id))} />
-                    )}
-                    <span className="truncate">{truncateLabel(project.name, starred ? 22 : 24)}</span>
+                    <span className={cn("h-3.5 w-3.5 shrink-0 rounded-[4px]", projectSwatch(project.id))} />
+                    <span className="truncate">{truncateLabel(project.name, 24)}</span>
                 </button>
 
                 {!settings.sidebarCollapsed && (
@@ -362,11 +355,6 @@ export default function ProjectNavigatorSidebar({ isOpen, onClose }: { isOpen: b
                         </div>
                     ) : (
                         <div className="space-y-5">
-                            <div className="space-y-1">
-                                <div className="px-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Starred</div>
-                                {starredProjects.map((project) => renderProjectRow(project, true))}
-                            </div>
-
                             <div className="space-y-1">
                                 <div className="flex items-center justify-between px-3 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                                     <span>Projects</span>
