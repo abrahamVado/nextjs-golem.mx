@@ -7,7 +7,7 @@ import { z } from "zod";
 import { useUI } from "@/components/providers/ui-provider";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { DashboardBadge, DashboardCanvas, DashboardContent, DashboardEmpty, DashboardHero, DashboardNotice, DashboardSurface } from "@/components/layout/dashboard-visuals";
+import { DashboardCanvas, DashboardContent, DashboardEmpty, DashboardHero, DashboardNotice } from "@/components/layout/dashboard-visuals";
 import CreateTaskModal from "./components/CreateTaskModal";
 import EditTaskModal from "./components/EditTaskModal";
 import NewColumnModal from "./components/NewColumnModal";
@@ -28,7 +28,7 @@ import { arrayMove } from "@dnd-kit/sortable";
 import { Task, Column, Project, TeamMember, TimeEntry, TaskFileRef, ApiTimeEntry, ChecklistItem, Priority } from "./types";
 import SortableColumn from "./components/SortableColumn";
 import TaskCard from "./components/TaskCard";
-import { AlertTriangle, FolderPlus, LayoutGrid, Pencil, Plus, Search, User, Zap } from "lucide-react";
+import { AlertTriangle, FolderPlus, LayoutGrid, Plus, Search, User, Zap } from "lucide-react";
 import "./kanban.css";
 
 type FilterMode = "all" | "mine" | "high";
@@ -115,19 +115,6 @@ function dueLabel(value?: string): string {
     if (date.toDateString() === today.toDateString()) return "Due Today";
     if (date.toDateString() === tomorrow.toDateString()) return "Due Tomorrow";
     return `Due ${date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
-}
-
-function startOfDay(value: Date): Date {
-    return new Date(value.getFullYear(), value.getMonth(), value.getDate());
-}
-
-function dayDiffFromToday(value?: string): number | null {
-    if (!value) return null;
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return null;
-    const today = startOfDay(new Date());
-    const target = startOfDay(date);
-    return Math.round((target.getTime() - today.getTime()) / 86400000);
 }
 
 function timeToMinutes(value: string): number {
@@ -383,91 +370,10 @@ export default function KanbanPage({ initialProjectId = null }: { initialProject
         () => projects.find((project) => project.id === projectId),
         [projects, projectId]
     );
-    const openEditProjectModal = () => {
-        if (!selectedProject) return;
-        setProjectModalMode("edit");
-        setProjectForm({
-            name: selectedProject.name || "",
-            description: selectedProject.description || "",
-            icon: "",
-        });
-        setProjectModalOpen(true);
-    };
     const trackedTotalTime = useMemo(
         () => minutesToTime(timeEntries.reduce((sum, entry) => sum + timeToMinutes(entry.time), 0)),
         [timeEntries]
     );
-    const boardTasks = useMemo(
-        () => columns.flatMap((column) => (column.tasks || []).map((task) => ({ ...task, columnTitle: column.title, columnKey: column.key }))),
-        [columns]
-    );
-    const myTasks = useMemo(
-        () => boardTasks.filter((task) => currentUserId ? (task.assignees || []).includes(currentUserId) : false).length,
-        [boardTasks, currentUserId]
-    );
-    const overdueTasks = useMemo(
-        () => boardTasks.filter((task) => {
-            const diff = dayDiffFromToday(task.due_date);
-            return diff !== null && diff < 0;
-        }),
-        [boardTasks]
-    );
-    const dueSoonTasks = useMemo(
-        () => boardTasks.filter((task) => {
-            const diff = dayDiffFromToday(task.due_date);
-            return diff !== null && diff >= 0 && diff <= 2;
-        }),
-        [boardTasks]
-    );
-    const unassignedUrgentTasks = useMemo(
-        () => boardTasks.filter((task) => {
-            const hasAssignee = (task.assignees || []).length > 0 || Boolean(task.owner_id);
-            return !hasAssignee && (task.priority === "HIGH" || task.priority === "URGENT");
-        }),
-        [boardTasks]
-    );
-    const ownerGapTasks = useMemo(
-        () => boardTasks.filter((task) => !task.owner_id),
-        [boardTasks]
-    );
-    const noDueDateTasks = useMemo(
-        () => boardTasks.filter((task) => !task.due_date),
-        [boardTasks]
-    );
-    const reviewColumn = useMemo(
-        () => columns.find((column) => {
-            const key = column.key.toLowerCase();
-            return key.includes("review");
-        }),
-        [columns]
-    );
-    const busiestColumn = useMemo(
-        () => columns.reduce<Column | null>((current, column) => {
-            if (!current) return column;
-            return (column.tasks?.length || 0) > (current.tasks?.length || 0) ? column : current;
-        }, null),
-        [columns]
-    );
-    const atRiskCount = overdueTasks.length + unassignedUrgentTasks.length;
-    const focusTodayCount = dueSoonTasks.length;
-    const flowPressureCount = reviewColumn?.tasks?.length || busiestColumn?.tasks?.length || 0;
-    const atRiskSummary = overdueTasks.length > 0 || unassignedUrgentTasks.length > 0
-        ? `${overdueTasks.length} overdue, ${unassignedUrgentTasks.length} urgent without coverage`
-        : "No overdue or uncovered urgent tasks";
-    const focusTodaySummary = focusTodayCount > 0
-        ? `${focusTodayCount} tasks due today, tomorrow, or within 48 hours`
-        : "Nothing due in the next 48 hours";
-    const flowPressureSummary = reviewColumn
-        ? `${reviewColumn.title} is carrying the heaviest review load`
-        : busiestColumn
-            ? `${busiestColumn.title} has the heaviest load`
-            : "No active stages yet";
-    const noDueDateSummary = noDueDateTasks.length > 0
-        ? `${noDueDateTasks.length} tasks are still missing a delivery target`
-        : "Every task has a due date";
-    const myTasksSummary = myTasks > 0
-        ? `${myTasks} tasks are currently assigned to you`
-        : "Nothing is assigned to you right now";
     useEffect(() => {
         setHeaderTitle(selectedProject?.name || "Project Kanban");
         setHeaderDescription(selectedProject?.description || "Manage tasks across stages with clear focus");
