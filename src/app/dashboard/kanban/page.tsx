@@ -1079,7 +1079,7 @@ export default function KanbanPage({ initialProjectId = null }: { initialProject
                         onDragOver={handleDragOver}
                         onDragEnd={handleDragEnd}
                     >
-                        <div id="kanban-board" className="kanban-board flex gap-5 overflow-x-auto pb-6 h-full items-start">
+                        <div id="kanban-board" className="kanban-board flex h-full items-stretch gap-5 overflow-x-auto pb-6">
                             {filteredColumns.map((column) => (
                                 <SortableColumn
                                     key={column.key}
@@ -1098,8 +1098,8 @@ export default function KanbanPage({ initialProjectId = null }: { initialProject
                                     onDeleteTask={(task) => confirmDeleteTask(task.id)}
                                 />
                             ))}
-                            <div className="min-w-[290px] max-w-[290px] flex flex-col h-full">
-                                <button className="add-column-btn flex min-h-[180px] items-center justify-center rounded-[24px] border-2 border-dashed border-slate-300 bg-white/70 p-4 transition-colors hover:border-emerald-300 hover:bg-white/90" onClick={() => setColumnModalOpen(true)}>
+                            <div className="flex h-full min-w-[290px] max-w-[290px] flex-col self-stretch">
+                                <button className="add-column-btn flex h-full min-h-[420px] items-center justify-center rounded-[24px] border-2 border-dashed border-slate-300 bg-white/70 p-4 transition-colors hover:border-emerald-300 hover:bg-white/90" onClick={() => setColumnModalOpen(true)}>
                                     <div className="text-center">
                                         <div className="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full bg-emerald-100 text-emerald-700"><Plus className="h-5 w-5" /></div>
                                         <p className="font-medium text-slate-800">Add New Column</p>
