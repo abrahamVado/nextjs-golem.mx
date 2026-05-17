@@ -17,6 +17,7 @@ type FilterMode = "all" | "mine" | "unassigned" | "overdue";
 export default function TicketsPage() {
     const router = useRouter();
     const { user } = useAuth();
+    const currentUserId = user?.id != null ? String(user.id) : null;
 
     const [tickets, setTickets] = useState<TicketListItem[]>([]);
     const [members, setMembers] = useState<TeamMember[]>([]);
@@ -66,7 +67,7 @@ export default function TicketsPage() {
                 filter === "all"
                     ? true
                     : filter === "mine"
-                        ? Boolean(user?.id) && ticket.assignee_ids.includes(String(user.id))
+                        ? Boolean(currentUserId) && ticket.assignee_ids.includes(currentUserId || "")
                         : filter === "unassigned"
                             ? ticket.assignee_ids.length === 0
                             : isTicketOverdue(ticket);
@@ -84,14 +85,14 @@ export default function TicketsPage() {
 
             return matchesFilter && matchesQuery;
         });
-    }, [filter, memberNameById, query, tickets, user?.id]);
+    }, [currentUserId, filter, memberNameById, query, tickets]);
 
     const stats = useMemo(() => ({
         total: tickets.length,
-        mine: tickets.filter((ticket) => Boolean(user?.id) && ticket.assignee_ids.includes(String(user.id))).length,
+        mine: tickets.filter((ticket) => Boolean(currentUserId) && ticket.assignee_ids.includes(currentUserId || "")).length,
         unassigned: tickets.filter((ticket) => ticket.assignee_ids.length === 0).length,
         overdue: tickets.filter(isTicketOverdue).length,
-    }), [tickets, user?.id]);
+    }), [currentUserId, tickets]);
 
     return (
         <DashboardCanvas>
