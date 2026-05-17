@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 import { DashboardCanvas, DashboardContent, DashboardHero, DashboardNotice, DashboardSurface } from '@/components/layout/dashboard-visuals';
 import { Button } from '@/components/ui/Button';
@@ -9,7 +10,8 @@ import { useLanguage } from '@/components/providers/language-provider';
 import { getErrorMessage } from '@/lib/errors';
 import { resolveAssetURL } from '@/lib/assets';
 import { useAuth } from '@/context/AuthContext';
-import { userApi } from '@/lib/api';
+import { API_BASE_URL, userApi } from '@/lib/api';
+import { hasApiAdminAccess } from '@/lib/access';
 
 type MePayload = {
     user_id: string;
@@ -148,6 +150,14 @@ export default function SettingsPage() {
     const freeDays = me?.free_days_remaining ?? user?.free_days_remaining ?? 0;
     const isPremium = Boolean(me?.is_premium ?? user?.is_premium);
     const isBlocked = Boolean(me?.is_blocked ?? user?.is_blocked);
+    const canManageApi = hasApiAdminAccess(user);
+    const docsURL = (() => {
+        try {
+            return `${new URL(API_BASE_URL).origin}/api/docs`;
+        } catch {
+            return '/api/docs';
+        }
+    })();
     const initials = displayName
         .split(' ')
         .filter(Boolean)
@@ -266,6 +276,52 @@ export default function SettingsPage() {
                                             <li>Print reports</li>
                                         </ul>
                                     </div>
+                                </div>
+                            </DashboardSurface>
+
+                            <DashboardSurface>
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                    <div>
+                                        <h2 className="text-lg font-semibold text-gray-900">API configuration</h2>
+                                        <p className="mt-1 text-sm text-slate-600">
+                                            Configure tenant API access, generate API keys, and manage request-signing credentials from one place.
+                                        </p>
+                                    </div>
+                                    <Button variant="outline" asChild>
+                                        <a href={docsURL} target="_blank" rel="noreferrer">Open API Docs</a>
+                                    </Button>
+                                </div>
+
+                                <div className="mt-6 grid gap-4 md:grid-cols-2">
+                                    <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                                        <div className="text-sm font-semibold text-slate-950">API keys</div>
+                                        <p className="mt-2 text-sm leading-6 text-slate-600">
+                                            Create an API client, generate a key, and copy the full token once for secure storage.
+                                        </p>
+                                        <div className="mt-4 flex flex-wrap gap-2">
+                                            <Button asChild>
+                                                <Link href="/dashboard/api/clients">Open API administration</Link>
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                                        <div className="text-sm font-semibold text-slate-950">Signing keys</div>
+                                        <p className="mt-2 text-sm leading-6 text-slate-600">
+                                            Upload an OpenSSH public key, activate it with a signed challenge, and use the private key for signed requests.
+                                        </p>
+                                        <div className="mt-4 flex flex-wrap gap-2">
+                                            <Button variant="outline" asChild>
+                                                <Link href="/dashboard/api/orchestration">Open orchestration tools</Link>
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+                                    {canManageApi
+                                        ? 'The frontend is ready for API key generation and public-key setup. If an action fails, the remaining gap is likely the backend apikey routes.'
+                                        : 'API configuration is visible here for reference, but only admin or owner roles can manage API clients and signing credentials.'}
                                 </div>
                             </DashboardSurface>
 
