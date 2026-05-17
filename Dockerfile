@@ -4,9 +4,14 @@ WORKDIR /app
 
 ARG NPM_CONFIG_STRICT_SSL=true
 ENV NPM_CONFIG_STRICT_SSL=$NPM_CONFIG_STRICT_SSL
+ENV NODE_OPTIONS=--openssl-legacy-provider
 RUN npm config set strict-ssl $NPM_CONFIG_STRICT_SSL \
     && npm config set fund false \
-    && npm config set audit false
+    && npm config set audit false \
+    && npm config set fetch-retries 5 \
+    && npm config set fetch-retry-mintimeout 2000 \
+    && npm config set fetch-retry-maxtimeout 15000 \
+    && npm config set maxsockets 1
 
 COPY package*.json ./
 

@@ -65,14 +65,14 @@ export default function APIClientsPage() {
     const canManageApi = hasApiAdminAccess(user);
 
     const [clients, setClients] = useState<APIClient[]>([]);
-    const [selectedClientID, setSelectedClientID] = useState<number | null>(null);
+    const [selectedClientID, setSelectedClientID] = useState<string | null>(null);
     const [newClientName, setNewClientName] = useState('');
     const [newClientDescription, setNewClientDescription] = useState('');
     const [scopes, setScopes] = useState('orchestration:read,orchestration:run');
     const [newOpenSSHPublicKey, setNewOpenSSHPublicKey] = useState('');
     const [privateKeyPkcs8B64, setPrivateKeyPkcs8B64] = useState('');
     const [challenge, setChallenge] = useState('');
-    const [publicKeyID, setPublicKeyID] = useState<number | null>(null);
+    const [publicKeyID, setPublicKeyID] = useState<string | null>(null);
     const [latestToken, setLatestToken] = useState('');
     const [latestKeyID, setLatestKeyID] = useState('');
     const [latestPublicKeyFingerprint, setLatestPublicKeyFingerprint] = useState('');
